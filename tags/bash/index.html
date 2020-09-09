@@ -1,0 +1,727 @@
+
+
+<!DOCTYPE HTML>
+<html>
+<head>
+    <!--Setting-->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <meta name="renderer" content="webkit|ie-comp|ie-stand">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="format-detection" content="telephone=no,email=no,adress=no">
+    <meta name="browsermode" content="application">
+    <meta name="screen-orientation" content="portrait">
+    <link rel="dns-prefetch" href="https://chiseller.github.io">
+   <!-- gittalk -->
+   
+ <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+    <script src="https://cdn.bootcss.com/jquery/2.1.1/jquery.js"></script>
+    
+    <!--SEO-->
+
+<meta name="description" content="你脖子扬起来，看云，云就散了；看雨，雨就收了；看我，我就酥了！"/>
+
+
+
+<meta name="robots" content="all" />
+<meta name="google" content="all" />
+<meta name="googlebot" content="all" />
+<meta name="verify" content="all" />
+    <!--Title-->
+
+
+<title>标签: bash | Fingle</title>
+
+
+    <link rel="alternate" href="/atom.xml" title="Fingle" type="application/atom+xml">
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+<script>
+// One of my first <canvas> experiments, woop! :D 
+
+var SCREEN_WIDTH = window.innerWidth;
+var SCREEN_HEIGHT = window.innerHeight;
+
+var RADIUS = 70;
+
+var RADIUS_SCALE = 1;
+var RADIUS_SCALE_MIN = 1;
+var RADIUS_SCALE_MAX = 1.5;
+
+var QUANTITY = 25;
+
+var canvas;
+var context;
+var particles;
+
+var mouseX = SCREEN_WIDTH * 0.5;
+var mouseY = SCREEN_HEIGHT * 0.5;
+var mouseIsDown = false;
+
+function init() {
+
+  canvas = document.getElementById( 'world' );
+  
+  if (canvas && canvas.getContext) {
+        context = canvas.getContext('2d');
+        
+        // Register event listeners
+        window.addEventListener('mousemove', documentMouseMoveHandler, false);
+        window.addEventListener('mousedown', documentMouseDownHandler, false);
+        window.addEventListener('mouseup', documentMouseUpHandler, false);
+        document.addEventListener('touchstart', documentTouchStartHandler, false);
+        document.addEventListener('touchmove', documentTouchMoveHandler, false);
+        window.addEventListener('resize', windowResizeHandler, false);
+        
+        createParticles();
+        
+        windowResizeHandler();
+        
+        setInterval( loop, 1000 / 60 );
+    }
+}
+
+function createParticles() {
+    particles = [];
+    
+    for (var i = 0; i < QUANTITY; i++) {
+        var particle = {
+            size: 1,
+            position: { x: mouseX, y: mouseY },
+            offset: { x: 0, y: 0 },
+            shift: { x: mouseX, y: mouseY },
+            speed: 0.01+Math.random()*0.04,
+            targetSize: 1,
+            fillColor: '#' + (Math.random() * 0x904040 + 0xaaaaaa | 0).toString(16),
+            orbit: RADIUS*.5 + (RADIUS * .5 * Math.random())
+        };
+        
+        particles.push( particle );
+    }
+}
+
+function documentMouseMoveHandler(event) {
+    mouseX = event.clientX - (window.innerWidth - SCREEN_WIDTH) * .5;
+    mouseY = event.clientY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+}
+
+function documentMouseDownHandler(event) {
+    mouseIsDown = true;
+}
+
+function documentMouseUpHandler(event) {
+    mouseIsDown = false;
+}
+
+function documentTouchStartHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function documentTouchMoveHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function windowResizeHandler() {
+    SCREEN_WIDTH = window.innerWidth;
+    SCREEN_HEIGHT = window.innerHeight;
+    
+    canvas.width = SCREEN_WIDTH;
+    canvas.height = SCREEN_HEIGHT;
+}
+
+function loop() {
+    
+    if( mouseIsDown ) {
+        RADIUS_SCALE += ( RADIUS_SCALE_MAX - RADIUS_SCALE ) * (0.02);
+    }
+    else {
+        RADIUS_SCALE -= ( RADIUS_SCALE - RADIUS_SCALE_MIN ) * (0.02);
+    }
+    
+    RADIUS_SCALE = Math.min( RADIUS_SCALE, RADIUS_SCALE_MAX );
+    
+    context.fillStyle = 'rgba(0,0,0,0.05)';
+         context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+    
+    for (i = 0, len = particles.length; i < len; i++) {
+        var particle = particles[i];
+        
+        var lp = { x: particle.position.x, y: particle.position.y };
+        
+        // Rotation
+        particle.offset.x += particle.speed;
+        particle.offset.y += particle.speed;
+        
+        // Follow mouse with some lag
+        particle.shift.x += ( mouseX - particle.shift.x) * (particle.speed);
+        particle.shift.y += ( mouseY - particle.shift.y) * (particle.speed);
+        
+        // Apply position
+        particle.position.x = particle.shift.x + Math.cos(i + particle.offset.x) * (particle.orbit*RADIUS_SCALE);
+        particle.position.y = particle.shift.y + Math.sin(i + particle.offset.y) * (particle.orbit*RADIUS_SCALE);
+        
+        // Limit to screen bounds
+        particle.position.x = Math.max( Math.min( particle.position.x, SCREEN_WIDTH ), 0 );
+        particle.position.y = Math.max( Math.min( particle.position.y, SCREEN_HEIGHT ), 0 );
+        
+        particle.size += ( particle.targetSize - particle.size ) * 0.01;
+        
+        if( Math.round( particle.size ) == Math.round( particle.targetSize ) ) {
+            particle.targetSize = 1 + Math.random() * 2;
+        }
+        
+        context.beginPath();
+        context.fillStyle = particle.fillColor;
+        context.strokeStyle = particle.fillColor;
+        context.lineWidth = particle.size;
+        context.moveTo(lp.x, lp.y);
+        context.lineTo(particle.position.x, particle.position.y);
+        context.stroke();
+        context.arc(particle.position.x, particle.position.y, particle.size/2, 0, Math.PI*2, true);
+        context.fill();
+    }
+}
+window.onload = init;</script>
+    
+
+
+
+
+
+<link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.4/css/bootstrap.min.css?rev=3.3.4">
+<link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="/css/style.css?rev=@@hash">
+
+
+
+
+    
+    <div class="hide">
+    	<script src="https://s5.cnzz.com/z_stat.php?id=1276871509&web_id=1276871509" language="JavaScript"></script>
+    </div>
+
+
+
+
+
+
+    
+    
+</head>
+
+
+<!--[if lte IE 8]>
+<style>
+    html{ font-size: 1em }
+</style>
+<![endif]-->
+<!--[if lte IE 9]>
+<div style="ie">你使用的浏览器版本过低，为了你更好的阅读体验，请更新浏览器的版本或者使用其他现代浏览器，比如Chrome、Firefox、Safari等。</div>
+<![endif]-->
+
+<body>
+    <header class="main-header"  >
+    <div class="main-header-box">
+        <a class="header-avatar" href="/" title="">
+            <img src="/img/avatar.jpg" alt="logo头像">
+        </a>
+        <div class="branding">
+        	<!--<h2 class="text-hide">Snippet主题,从未如此简单有趣</h2>-->
+            
+                 <img src="/img/branding.png" alt="Snippet 博客主题">  
+             
+    	</div>
+    </div>
+</header>
+    <nav class="main-navigation">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="navbar-header"><span class="nav-toggle-button collapsed" data-toggle="collapse" data-target="#main-menu" id="mnav">
+                    <span class="sr-only">Toggle navigation</span>
+                    <i class="fa fa-bars"></i>
+                    </span>
+                </div>
+                <div class="collapse navbar-collapse" id="main-menu">
+                    <ul class="menu">
+                        
+                            <li role="presentation"><a href="/"><i class="fa fa-fw "></i>首页</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/iOS/"><i class="fa fa-fw "></i>iOS</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/Mac/"><i class="fa fa-fw "></i>Mac</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/common/"><i class="fa fa-fw "></i>生活</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/about/"><i class="fa fa-fw "></i>其他</a>
+                            </li>
+                        
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+    <section class="content-wrap">
+        <div class="container">
+            <div class="row">
+                <main class="col-md-8 main-content ">
+                    <h3 class= "tag category"> 
+
+    bash 
+
+
+</h3>
+
+    <article class="post">
+        
+        <div class="post-content">
+            <div class="post-head home-post-head">
+                <h1 class="post-title"> 
+                    <a href="/2015/07/02/POST和PUT请求的区别/">在centos上搭建git服务器</a>
+                </h1>
+                <div class="post-meta">  &bull;
+                    <time class="post-date" datetime="" title="">
+                        2015年07月02日
+                    </time>
+                </div>
+            </div>
+            <p class="brief">
+                POST和PUT请求的区别1.什么是幂等性
+幂等性概念：幂等通俗来说是指不管进行多少次重复操作，都是实现相同的结果。
+
+2.REST请求中哪些是幂等操作GET，PUT，DELETE都是幂等操作，而POST不是.   
+
+1.首先GET请求很好理解，对资源做查询多次，此实现的结果都是一样的。 2.PUT请求的幂等性...
+            </p> 
+        </div>
+    </article>
+ 
+    <article class="post">
+        
+        <div class="post-content">
+            <div class="post-head home-post-head">
+                <h1 class="post-title"> 
+                    <a href="/2015/07/02/在centos上搭建git服务器/">在centos上搭建git服务器</a>
+                </h1>
+                <div class="post-meta">  &bull;
+                    <time class="post-date" datetime="" title="">
+                        2015年07月02日
+                    </time>
+                </div>
+            </div>
+            <p class="brief">
+                  刚开始搭建blog的时候打算用ftp的,可是期间遇到了各种问题,最后选择了git,其实现在想想遇到的大部分问题应该全是权限的问题,毕竟对linux的认识只能说算是刚刚起步,等有空的时候再去好好研究吧.   
+ 
+vps(系统centos6.2,git版本1.7)
+安装git方法一.yum install -y...
+            </p> 
+        </div>
+    </article>
+ 
+    <article class="post">
+        
+        <div class="post-content">
+            <div class="post-head home-post-head">
+                <h1 class="post-title"> 
+                    <a href="/2015/05/07/Mac终端制作带密码的压缩包/">Mac终端制作带密码的压缩包</a>
+                </h1>
+                <div class="post-meta">  &bull;
+                    <time class="post-date" datetime="" title="">
+                        2015年05月07日
+                    </time>
+                </div>
+            </div>
+            <p class="brief">
+                刚在网上闲逛看到的，记录一下，以备不时之需 ^_^！  
+1. 只压缩单个文件zip -e yourZipFileName.zip yourSourceFile回车 ，分别输入密码（回车）和确认密码（回车）就OK了。
+2. 压缩文件夹zip -e -r yourZipFileName.zip yourSource...
+            </p> 
+        </div>
+    </article>
+ 
+
+
+
+
+
+
+
+                </main>
+                
+    <aside class="col-md-4 sidebar">
+        
+        
+    <div class="widget">    
+        <h3 class="title">搜索</h3>
+        <div id="search-form">
+            <div id="result-mask" class="hide"></div>
+            <div class="search-area">
+                
+                    <input id="search-key" type="search" autocomplete="off" placeholder="搜点什么呢?">
+                    <button type="button" class="search-form-submit" id="search-local">站内搜索</button>
+                
+                
+            </div>
+            <div id="result-wrap" class="hide">
+                <div id="search-result"></div>
+            </div>
+            <div class="hide">
+                <template id="search-tpl">
+                    <div class="item">
+                        <a href="/{path}" title="{title}">
+                            <div class="title">{title}</div>
+                            <div class="content">{content}</div>
+                        </a>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+        
+        
+    <div class="widget notification">
+        <h3 class="title">关于我</h3>
+        <div>
+            <p>iOS&Web程序员一枚，现居苏州，胆小认生，惧冷怕热，暂时就这么多了！ <br/>
+<hr/>
+</p>
+        </div>
+    </div>
+
+        
+        
+ <div class="widget">
+        <h3 class="title">天气（来源：和风天气）</h3>
+        <div class="content"> 
+        	<div id="he-plugin-standard"></div>
+        </div>
+ </div>
+  
+
+<script>
+WIDGET = {
+  CONFIG: {
+    "layout": 1,
+    "width": "310",
+    "height": "150",
+    "background": 1,
+    "dataColor": "FFFFFF",
+    "language": "zh",
+    "borderRadius": 5,
+    "key": 'bb37cb1f915e4a8a9727d8f2993ab8d2'
+  }
+}
+</script>
+<script src="https://widget.heweather.net/standard/static/js/he-standard-common.js?v=1.1"></script>
+
+
+        
+        
+    <div class="widget">
+      <h3 class="title">社交</h3> 
+        <div class="content social">
+            
+	            <a href="//github.com/chiseller" class = "bg-github" rel="external nofollow" title="Github" target="_blank">
+			    	<i class="github fa fa-github"></i>
+			    </a>
+            
+	            <a href="//twitter.com/fingle0618" class = "bg-twitter" rel="external nofollow" title="Twitter" target="_blank">
+			    	<i class="twitter fa fa-twitter"></i>
+			    </a>
+            
+	            <a href="/" class = "bg-wechat" rel="external nofollow" title="微信" target="_blank">
+			    	<i class="wechat fa fa-wechat"></i>
+			    </a>
+            
+	            <a href="//weibo.com/gitless" class = "bg-weibo" rel="external nofollow" title="微博" target="_blank">
+			    	<i class="weibo fa fa-weibo"></i>
+			    </a>
+            
+	            <a href="/atom.xml" class = "bg-feed" rel="external nofollow" title="RSS" target="_blank">
+			    	<i class="feed fa fa-feed"></i>
+			    </a>
+            
+        </div>
+    </div>
+
+
+        
+        
+    <div class="widget">
+        <h3 class="title">分类</h3>
+        <ul class="category-list"><li class="category-list-item"><a class="category-list-link current" href="/categories/App/"><i class="fa" aria-hidden="true">App</i></a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mac/"><i class="fa" aria-hidden="true">Mac</i></a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP/"><i class="fa" aria-hidden="true">PHP</i></a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iOS/"><i class="fa" aria-hidden="true">iOS</i></a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/"><i class="fa" aria-hidden="true">linux</i></a><span class="category-list-count">2</span></li></ul>
+    </div>
+
+
+        
+        
+    <div class="widget">
+      <h3 class="title">归档</h3>
+        <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/"><i class="fa" aria-hidden="true">九月 2020</i></a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/"><i class="fa" aria-hidden="true">五月 2018</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/"><i class="fa" aria-hidden="true">五月 2016</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/07/"><i class="fa" aria-hidden="true">七月 2015</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/06/"><i class="fa" aria-hidden="true">六月 2015</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/05/"><i class="fa" aria-hidden="true">五月 2015</i></a><span class="archive-list-count">2</span></li></ul>
+    </div>
+
+
+        
+        
+  <div class="widget">
+    <h3 class="title">标签云</h3>
+    <div class="content tag-cloud">
+        <a href="/tags/JavaScript/" style="font-size: 13.33px;">JavaScript</a> <a href="/tags/MAC/" style="font-size: 10px;">MAC</a> <a href="/tags/Mac/" style="font-size: 10px;">Mac</a> <a href="/tags/PHP/" style="font-size: 10px;">PHP</a> <a href="/tags/Support/" style="font-size: 10px;">Support</a> <a href="/tags/Works/" style="font-size: 13.33px;">Works</a> <a href="/tags/bash/" style="font-size: 16.67px;">bash</a> <a href="/tags/git/" style="font-size: 13.33px;">git</a> <a href="/tags/iOS/" style="font-size: 20px;">iOS</a>
+    </div>
+  </div>
+
+
+        
+        
+    <div class="widget">
+        <h3 class="title">友链</h3>
+        <div class="content friends-link">
+        
+            <a href="http://www.chiseller.com" class="fa" target="_blank">个人博客</a>
+        
+        </div>
+    </div>
+
+
+        
+    </aside>
+
+            </div>
+        </div>
+    </section>
+    <footer class="main-footer">
+    <div class="container">
+        <div class="row">
+        </div>
+    </div>
+</footer>
+
+<a id="back-to-top" class="hide">
+	<i class="fa fa-chevron-up"></i>
+</a>
+
+
+
+
+    <div class="copyright">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12"> 
+                <span>Copyright &copy; 2017
+                </span> | 
+                <span>
+                    Powered by <a href="//hexo.io" class="copyright-links" target="_blank" rel="nofollow">Hexo</a>
+                </span> | 
+                <span>
+                    Theme by <a href="//github.com/chiseller/hexo-theme-snippet.git" class="copyright-links" target="_blank" rel="nofollow">SnippetX</a>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+	<!--prettify代码高亮脚本引入-->
+  <script src="/plugins/prettify/js/prettify.js"></script>
+  <script>
+     $(document).ready(function(){
+		$('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
+ 		prettyPrint();
+		})
+  </script>
+
+
+
+	<script src="/js/search.js?rev=@@hash"></script>
+
+
+<script src="/js/app.js?rev=@@hash"></script>
+
+
+
+
+
+</body>
+
+<div><canvas id='world'></canvas></div>
+<script>
+// One of my first <canvas> experiments, woop! :D 
+
+var SCREEN_WIDTH = window.innerWidth;
+var SCREEN_HEIGHT = window.innerHeight;
+
+var RADIUS = 70;
+
+var RADIUS_SCALE = 1;
+var RADIUS_SCALE_MIN = 1;
+var RADIUS_SCALE_MAX = 1.5;
+
+var QUANTITY = 25;
+
+var canvas;
+var context;
+var particles;
+
+var mouseX = SCREEN_WIDTH * 0.5;
+var mouseY = SCREEN_HEIGHT * 0.5;
+var mouseIsDown = false;
+
+function init() {
+
+  canvas = document.getElementById( 'world' );
+  
+  if (canvas && canvas.getContext) {
+        context = canvas.getContext('2d');
+        
+        // Register event listeners
+        window.addEventListener('mousemove', documentMouseMoveHandler, false);
+        window.addEventListener('mousedown', documentMouseDownHandler, false);
+        window.addEventListener('mouseup', documentMouseUpHandler, false);
+        document.addEventListener('touchstart', documentTouchStartHandler, false);
+        document.addEventListener('touchmove', documentTouchMoveHandler, false);
+        window.addEventListener('resize', windowResizeHandler, false);
+        
+        createParticles();
+        
+        windowResizeHandler();
+        
+        setInterval( loop, 1000 / 60 );
+    }
+}
+
+function createParticles() {
+    particles = [];
+    
+    for (var i = 0; i < QUANTITY; i++) {
+        var particle = {
+            size: 1,
+            position: { x: mouseX, y: mouseY },
+            offset: { x: 0, y: 0 },
+            shift: { x: mouseX, y: mouseY },
+            speed: 0.01+Math.random()*0.04,
+            targetSize: 1,
+            fillColor: '#' + (Math.random() * 0x904040 + 0xaaaaaa | 0).toString(16),
+            orbit: RADIUS*.5 + (RADIUS * .5 * Math.random())
+        };
+        
+        particles.push( particle );
+    }
+}
+
+function documentMouseMoveHandler(event) {
+    mouseX = event.clientX - (window.innerWidth - SCREEN_WIDTH) * .5;
+    mouseY = event.clientY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+}
+
+function documentMouseDownHandler(event) {
+    mouseIsDown = true;
+}
+
+function documentMouseUpHandler(event) {
+    mouseIsDown = false;
+}
+
+function documentTouchStartHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function documentTouchMoveHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function windowResizeHandler() {
+    SCREEN_WIDTH = window.innerWidth;
+    SCREEN_HEIGHT = window.innerHeight;
+    
+    canvas.width = SCREEN_WIDTH;
+    canvas.height = SCREEN_HEIGHT;
+}
+
+function loop() {
+    
+    if( mouseIsDown ) {
+        RADIUS_SCALE += ( RADIUS_SCALE_MAX - RADIUS_SCALE ) * (0.02);
+    }
+    else {
+        RADIUS_SCALE -= ( RADIUS_SCALE - RADIUS_SCALE_MIN ) * (0.02);
+    }
+    
+    RADIUS_SCALE = Math.min( RADIUS_SCALE, RADIUS_SCALE_MAX );
+    
+    context.fillStyle = 'rgba(0,0,0,0.05)';
+         context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+    
+    for (i = 0, len = particles.length; i < len; i++) {
+        var particle = particles[i];
+        
+        var lp = { x: particle.position.x, y: particle.position.y };
+        
+        // Rotation
+        particle.offset.x += particle.speed;
+        particle.offset.y += particle.speed;
+        
+        // Follow mouse with some lag
+        particle.shift.x += ( mouseX - particle.shift.x) * (particle.speed);
+        particle.shift.y += ( mouseY - particle.shift.y) * (particle.speed);
+        
+        // Apply position
+        particle.position.x = particle.shift.x + Math.cos(i + particle.offset.x) * (particle.orbit*RADIUS_SCALE);
+        particle.position.y = particle.shift.y + Math.sin(i + particle.offset.y) * (particle.orbit*RADIUS_SCALE);
+        
+        // Limit to screen bounds
+        particle.position.x = Math.max( Math.min( particle.position.x, SCREEN_WIDTH ), 0 );
+        particle.position.y = Math.max( Math.min( particle.position.y, SCREEN_HEIGHT ), 0 );
+        
+        particle.size += ( particle.targetSize - particle.size ) * 0.01;
+        
+        if( Math.round( particle.size ) == Math.round( particle.targetSize ) ) {
+            particle.targetSize = 1 + Math.random() * 2;
+        }
+        
+        context.beginPath();
+        context.fillStyle = particle.fillColor;
+        context.strokeStyle = particle.fillColor;
+        context.lineWidth = particle.size;
+        context.moveTo(lp.x, lp.y);
+        context.lineTo(particle.position.x, particle.position.y);
+        context.stroke();
+        context.arc(particle.position.x, particle.position.y, particle.size/2, 0, Math.PI*2, true);
+        context.fill();
+    }
+}
+window.onload = init;</script>
+</html>

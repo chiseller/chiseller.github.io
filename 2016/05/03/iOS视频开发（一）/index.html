@@ -1,0 +1,973 @@
+
+
+<!DOCTYPE HTML>
+<html>
+<head>
+    <!--Setting-->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <meta name="renderer" content="webkit|ie-comp|ie-stand">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="format-detection" content="telephone=no,email=no,adress=no">
+    <meta name="browsermode" content="application">
+    <meta name="screen-orientation" content="portrait">
+    <link rel="dns-prefetch" href="https://chiseller.github.io">
+   <!-- gittalk -->
+   
+ <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+    <script src="https://cdn.bootcss.com/jquery/2.1.1/jquery.js"></script>
+    
+    <!--SEO-->
+
+<meta name="description" content="你脖子扬起来，看云，云就散了；看雨，雨就收了；看我，我就酥了！"/>
+
+
+
+<meta name="robots" content="all" />
+<meta name="google" content="all" />
+<meta name="googlebot" content="all" />
+<meta name="verify" content="all" />
+    <!--Title-->
+
+
+<title>iOS视频开发（一） | Fingle</title>
+
+
+    <link rel="alternate" href="/atom.xml" title="Fingle" type="application/atom+xml">
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+<script>
+// One of my first <canvas> experiments, woop! :D 
+
+var SCREEN_WIDTH = window.innerWidth;
+var SCREEN_HEIGHT = window.innerHeight;
+
+var RADIUS = 70;
+
+var RADIUS_SCALE = 1;
+var RADIUS_SCALE_MIN = 1;
+var RADIUS_SCALE_MAX = 1.5;
+
+var QUANTITY = 25;
+
+var canvas;
+var context;
+var particles;
+
+var mouseX = SCREEN_WIDTH * 0.5;
+var mouseY = SCREEN_HEIGHT * 0.5;
+var mouseIsDown = false;
+
+function init() {
+
+  canvas = document.getElementById( 'world' );
+  
+  if (canvas && canvas.getContext) {
+        context = canvas.getContext('2d');
+        
+        // Register event listeners
+        window.addEventListener('mousemove', documentMouseMoveHandler, false);
+        window.addEventListener('mousedown', documentMouseDownHandler, false);
+        window.addEventListener('mouseup', documentMouseUpHandler, false);
+        document.addEventListener('touchstart', documentTouchStartHandler, false);
+        document.addEventListener('touchmove', documentTouchMoveHandler, false);
+        window.addEventListener('resize', windowResizeHandler, false);
+        
+        createParticles();
+        
+        windowResizeHandler();
+        
+        setInterval( loop, 1000 / 60 );
+    }
+}
+
+function createParticles() {
+    particles = [];
+    
+    for (var i = 0; i < QUANTITY; i++) {
+        var particle = {
+            size: 1,
+            position: { x: mouseX, y: mouseY },
+            offset: { x: 0, y: 0 },
+            shift: { x: mouseX, y: mouseY },
+            speed: 0.01+Math.random()*0.04,
+            targetSize: 1,
+            fillColor: '#' + (Math.random() * 0x904040 + 0xaaaaaa | 0).toString(16),
+            orbit: RADIUS*.5 + (RADIUS * .5 * Math.random())
+        };
+        
+        particles.push( particle );
+    }
+}
+
+function documentMouseMoveHandler(event) {
+    mouseX = event.clientX - (window.innerWidth - SCREEN_WIDTH) * .5;
+    mouseY = event.clientY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+}
+
+function documentMouseDownHandler(event) {
+    mouseIsDown = true;
+}
+
+function documentMouseUpHandler(event) {
+    mouseIsDown = false;
+}
+
+function documentTouchStartHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function documentTouchMoveHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function windowResizeHandler() {
+    SCREEN_WIDTH = window.innerWidth;
+    SCREEN_HEIGHT = window.innerHeight;
+    
+    canvas.width = SCREEN_WIDTH;
+    canvas.height = SCREEN_HEIGHT;
+}
+
+function loop() {
+    
+    if( mouseIsDown ) {
+        RADIUS_SCALE += ( RADIUS_SCALE_MAX - RADIUS_SCALE ) * (0.02);
+    }
+    else {
+        RADIUS_SCALE -= ( RADIUS_SCALE - RADIUS_SCALE_MIN ) * (0.02);
+    }
+    
+    RADIUS_SCALE = Math.min( RADIUS_SCALE, RADIUS_SCALE_MAX );
+    
+    context.fillStyle = 'rgba(0,0,0,0.05)';
+         context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+    
+    for (i = 0, len = particles.length; i < len; i++) {
+        var particle = particles[i];
+        
+        var lp = { x: particle.position.x, y: particle.position.y };
+        
+        // Rotation
+        particle.offset.x += particle.speed;
+        particle.offset.y += particle.speed;
+        
+        // Follow mouse with some lag
+        particle.shift.x += ( mouseX - particle.shift.x) * (particle.speed);
+        particle.shift.y += ( mouseY - particle.shift.y) * (particle.speed);
+        
+        // Apply position
+        particle.position.x = particle.shift.x + Math.cos(i + particle.offset.x) * (particle.orbit*RADIUS_SCALE);
+        particle.position.y = particle.shift.y + Math.sin(i + particle.offset.y) * (particle.orbit*RADIUS_SCALE);
+        
+        // Limit to screen bounds
+        particle.position.x = Math.max( Math.min( particle.position.x, SCREEN_WIDTH ), 0 );
+        particle.position.y = Math.max( Math.min( particle.position.y, SCREEN_HEIGHT ), 0 );
+        
+        particle.size += ( particle.targetSize - particle.size ) * 0.01;
+        
+        if( Math.round( particle.size ) == Math.round( particle.targetSize ) ) {
+            particle.targetSize = 1 + Math.random() * 2;
+        }
+        
+        context.beginPath();
+        context.fillStyle = particle.fillColor;
+        context.strokeStyle = particle.fillColor;
+        context.lineWidth = particle.size;
+        context.moveTo(lp.x, lp.y);
+        context.lineTo(particle.position.x, particle.position.y);
+        context.stroke();
+        context.arc(particle.position.x, particle.position.y, particle.size/2, 0, Math.PI*2, true);
+        context.fill();
+    }
+}
+window.onload = init;</script>
+    
+
+
+
+
+   <link rel="stylesheet" href="/plugins/prettify/themes/tomorrow-night-eighties.min.css?rev=9.12.0">
+
+
+<link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.4/css/bootstrap.min.css?rev=3.3.4">
+<link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="/css/style.css?rev=@@hash">
+
+
+
+
+    
+    <div class="hide">
+    	<script src="https://s5.cnzz.com/z_stat.php?id=1276871509&web_id=1276871509" language="JavaScript"></script>
+    </div>
+
+
+
+
+
+
+    
+    
+</head>
+
+
+<!--[if lte IE 8]>
+<style>
+    html{ font-size: 1em }
+</style>
+<![endif]-->
+<!--[if lte IE 9]>
+<div style="ie">你使用的浏览器版本过低，为了你更好的阅读体验，请更新浏览器的版本或者使用其他现代浏览器，比如Chrome、Firefox、Safari等。</div>
+<![endif]-->
+
+<body>
+    <header class="main-header"  >
+    <div class="main-header-box">
+        <a class="header-avatar" href="/" title="">
+            <img src="/img/avatar.jpg" alt="logo头像">
+        </a>
+        <div class="branding">
+        	<!--<h2 class="text-hide">Snippet主题,从未如此简单有趣</h2>-->
+            
+                 <img src="/img/branding.png" alt="Snippet 博客主题">  
+             
+    	</div>
+    </div>
+</header>
+    <nav class="main-navigation">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="navbar-header"><span class="nav-toggle-button collapsed" data-toggle="collapse" data-target="#main-menu" id="mnav">
+                    <span class="sr-only">Toggle navigation</span>
+                    <i class="fa fa-bars"></i>
+                    </span>
+                </div>
+                <div class="collapse navbar-collapse" id="main-menu">
+                    <ul class="menu">
+                        
+                            <li role="presentation"><a href="/"><i class="fa fa-fw "></i>首页</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/iOS/"><i class="fa fa-fw "></i>iOS</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/Mac/"><i class="fa fa-fw "></i>Mac</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/common/"><i class="fa fa-fw "></i>生活</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/about/"><i class="fa fa-fw "></i>其他</a>
+                            </li>
+                        
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+    <section class="content-wrap">
+        <div class="container">
+            <div class="row">
+                <main class="col-md-8 main-content m-post">
+                    <p id="process"></p>
+<article class="post">
+    <div class="post-head">
+        <h1 id="iOS视频开发（一）">
+            
+            iOS视频开发（一）
+            
+        </h1>
+        <div class="post-meta">
+    
+    
+    <span class="categories-meta fa-wrap">
+        <i class="fa fa-folder-open-o"></i>
+        <span>iOS</span>
+    </span>
+    
+    
+    <span class="fa-wrap">
+        <i class="fa fa-tags"></i>
+        <span class="tags-meta">
+            
+            iOS
+            
+        </span>
+    </span>
+    
+    
+    <span class="fa-wrap">
+        <i class="fa fa-clock-o"></i>
+        <span class="date-meta">2016/05/03</span>
+    </span>
+</div>
+
+            
+            
+            <p class="fa fa-exclamation-triangle warning">
+                本文于<strong>1590</strong>天之前发表，文中内容可能已经过时。
+            </p>
+            
+    </div>
+    
+    <div class="post-body post-content">
+        <h3 id="一、UIImagePickerController"><a href="#一、UIImagePickerController" class="headerlink" title="一、UIImagePickerController"></a>一、UIImagePickerController</h3><p><code>UIImagePickerController</code>是<code>UIKit</code>框架里面的一个class，通过这个系统提供的class我们可以简单的是实现拍照、录制视频和音频。 </p>
+<a id="more"></a>    
+<h5 id="三个步骤："><a href="#三个步骤：" class="headerlink" title="三个步骤："></a>三个步骤：</h5><blockquote>
+<ol>
+<li>当前控制器<code>present</code>一个<code>UIImagePickerController</code>类   </li>
+<li>在当前界面就可以拍照、录制视频和音频    </li>
+<li>实现<code>UIImagePickerController</code>的<code>delegate</code>，在<code>delegate</code>可以获取录制的视频和音频，来进行相应的操作.   </li>
+</ol>
+</blockquote>
+<h5 id="定制化UIImagePickerController"><a href="#定制化UIImagePickerController" class="headerlink" title="定制化UIImagePickerController"></a>定制化UIImagePickerController</h5><pre><code class="objc">
+//    查看摄像头是否可用
+if ([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera] == NO) {   
+  return;
+}
+UIImagePickerController *imagePick = [[UIImagePickerController alloc]init];
+imagePick.sourceType = UIImagePickerControllerSourceTypeCamera;
+//    我们还可以设置照片和视频拍摄的质量、是否可以开启闪光灯、是否开启手电筒
+//    还可以单独设置只支持视频模式
+//    imagePick.mediaTypes = [[NSArray alloc] initWithObjects: (NSString *) kUTTypeMovie, nil];
+imagePick.mediaTypes = [UIImagePickerController availableMediaTypesForSourceType:UIImagePickerControllerSourceTypeCamera];
+//    UINavigationControllerDelegate,UIImagePickerControllerDelegate;
+imagePick.delegate = self;
+//拍照或者录制结束后是否可以编辑
+imagePick.allowsEditing = NO;
+[self presentViewController:imagePick animated:YES completion:nil];
+</code></pre>
+<h5 id="界面的自定义"><a href="#界面的自定义" class="headerlink" title="界面的自定义"></a>界面的自定义</h5><p><code>cameraOverlayView</code>属性可以自定义<code>UIImagePickerController</code>界面顶部的控件，但是只在<code>UIImagePickerController</code>的<code>mediaTypes</code>为<code>UIImagePickerControllerSourceTypeCamera</code>时可用。   </p>
+<h5 id="实现UIImagePickerController的delegate"><a href="#实现UIImagePickerController的delegate" class="headerlink" title="实现UIImagePickerController的delegate"></a>实现<code>UIImagePickerController</code>的<code>delegate</code></h5><pre><code class="objectivec">- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary&lt;NSString *,id&gt; *)info{
+
+    NSString *mediaType = [info objectForKey:UIImagePickerControllerMediaType]; 
+    UIImage *originalImage, *editedImage, *imageToSave;
+    //    处理图片
+    if ([mediaType isEqualToString:(NSString *)kUTTypeImage]) {
+        editedImage = info[UIImagePickerControllerOriginalImage];
+        originalImage = info[UIImagePickerControllerEditedImage];
+        if (editedImage) {
+            imageToSave = editedImage;
+        }else{
+            imageToSave = originalImage;
+        }
+        UIImageWriteToSavedPhotosAlbum(imageToSave, nil, nil, nil);
+    }
+    //处理视频
+    if ([mediaType isEqualToString:(NSString *)kUTTypeMovie]) {
+        NSString *url = [info[UIImagePickerControllerMediaURL] path];
+        if (UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(url)) {
+            UISaveVideoAtPathToSavedPhotosAlbum(url, nil, nil, nil);
+        }
+    }
+    [picker dismissViewControllerAnimated:YES completion:nil];
+
+
+}
+</code></pre>
+<h3 id="二、AVCaptureSession-amp-AVCaptureMovieFileOutput"><a href="#二、AVCaptureSession-amp-AVCaptureMovieFileOutput" class="headerlink" title="二、AVCaptureSession &amp; AVCaptureMovieFileOutput"></a>二、<code>AVCaptureSession</code> &amp; <code>AVCaptureMovieFileOutput</code></h3><p>  要获取摄像机捕捉到的视频或者麦克风捕捉到的音频，我们需要对象表示<code>inputs</code>和<code>outputs</code>，并使用<code>AVCaptureSession</code>的实例来协调它们之间的数据流。   </p>
+<blockquote>
+<ol>
+<li>AVCaptureDevice 对象，表示声音或者视频采集设备，对应摄像头和麦克风。</li>
+<li>AVCaptureInput的子类，配置输入端口。</li>
+<li>AVCaptureOutput的子类， 输出采集到的视频或者图像。</li>
+<li>AVCaptureSession来协调从输入到输出的数据流。</li>
+</ol>
+</blockquote>
+<h5 id="步骤一：-创建AVCaptureDevice-对象"><a href="#步骤一：-创建AVCaptureDevice-对象" class="headerlink" title="步骤一： 创建AVCaptureDevice 对象"></a>步骤一： 创建<code>AVCaptureDevice</code> 对象</h5><p>因为我们需要录制视频和音频所以我们需要视频的AVCaptureDevice和音频的AVCaptureDevice。   </p>
+<pre><code class="objc">//我们同时获取了前摄像头和后摄像头因为等会我们要手动切换
+//获取音频device
+-(AVCaptureDevice *)audioDevice{
+    if (!_audioDevice) {
+        _audioDevice = [AVCaptureDevice devicesWithMediaType:AVMediaTypeAudio].firstObject;
+    }
+    return _audioDevice;
+}   
+
+//后置摄像头
+-(AVCaptureDevice *)backVideoDevice{
+    if (!_backVideoDevice) {
+        _backVideoDevice = [self getDeviceBy:AVCaptureDevicePositionBack];
+        if ([self.currentVideoDevice isTorchAvailable] &amp;&amp; [_backVideoDevice isTorchModeSupported:AVCaptureTorchModeOn]) {
+            //可以设置是否开启闪光灯，是否开始HDR、视频防抖、白平衡什么的
+            //设置device之前需要先 lockForConfiguration
+             if ([_backVideoDevice lockForConfiguration:NULL]==YES) {
+                self.currentVideoDevice.torchMode = AVCaptureTorchModeOn;
+                [self.currentVideoDevice unlockForConfiguration];
+            }
+        }
+
+    }
+    }
+    return _backVideoDevice;
+}
+//前置摄像头
+-(AVCaptureDevice *)frontVideoDevice{
+    if (!_frontVideoDevice) {
+        _frontVideoDevice = [self getDeviceBy:AVCaptureDevicePositionFront];
+    }
+    return _frontVideoDevice;
+}
+</code></pre>
+<h5 id="步骤二、配置inputs"><a href="#步骤二、配置inputs" class="headerlink" title="步骤二、配置inputs"></a>步骤二、配置inputs</h5><p>每个<code>AVCaptureDevice</code>对应一个<code>input</code>。   </p>
+<pre><code class="objc">//audio input
+- (AVCaptureDeviceInput *)audioInput{
+    if (!_audioInput) {
+        NSError *error = nil;
+        _audioInput = [AVCaptureDeviceInput deviceInputWithDevice:self.audioDevice error:&amp;error];
+
+    }
+    return _audioInput;
+}
+- (AVCaptureDeviceInput *)videoInput{
+    if (!_videoInput) {
+        NSError *error  = nil;
+        _videoInput = [AVCaptureDeviceInput deviceInputWithDevice:self.currentVideoDevice error:&amp;error];
+
+
+    }
+    return _videoInput;
+}
+</code></pre>
+<h5 id="步骤三-写入文件"><a href="#步骤三-写入文件" class="headerlink" title="步骤三: 写入文件"></a>步骤三: 写入文件</h5><p>Output有四种：</p>
+<blockquote>
+<p><code>AVCaptureMovieFileOutput</code> 写入文件<br><code>AVCaptureVideoDataOutput</code> 加工视频输出<br><code>AVCaptureAudioDataOutput</code> 加工音频输出<br><code>AVCaptureStillImageOutput</code> 捕捉输出的图像</p>
+</blockquote>
+<p>写入文件只需要<code>AVCaptureMovieFileOutput</code>就可以了。   </p>
+<pre><code class="objc">// output
+- (AVCaptureMovieFileOutput  *)movieFileOutput{
+    if (!_movieFileOutput) {
+        _movieFileOutput = [[AVCaptureMovieFileOutput  alloc]init];
+        //CMTime drution = CMTimeMake(1, 60);
+        //设置视频录制时间限制 kCMTimeInvalid(无限制)
+        _movieFileOutput.maxRecordedDuration = kCMTimeInvalid;
+        // 文件大小限制
+        //_movieFileOutput.maxRecordedFileSize = 1024 * 1024;
+        AVCaptureConnection *videoConnection = [_movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
+        // 是否支持科学防抖
+        if ([videoConnection isVideoStabilizationSupported]) {
+            videoConnection.preferredVideoStabilizationMode = AVCaptureVideoStabilizationModeAuto;
+        }
+        videoConnection.videoOrientation = self.previewLayer.connection.videoOrientation;
+    }
+    return _movieFileOutput;
+}
+</code></pre>
+<h5 id="步骤四：-获取AVCaptureSession"><a href="#步骤四：-获取AVCaptureSession" class="headerlink" title="步骤四： 获取AVCaptureSession"></a>步骤四： 获取<code>AVCaptureSession</code></h5><pre><code class="objc">- (AVCaptureSession *)session{
+    if (!_session) {
+        _session = [[AVCaptureSession alloc]init];
+        // 设置视频质量
+        if ([_session canSetSessionPreset:AVCaptureSessionPresetLow]) {
+            [_session setSessionPreset:AVCaptureSessionPresetLow];
+        }
+        //增加videoinput
+        if ([_session canAddInput:self.videoInput]) {
+            [_session addInput:self.videoInput];
+        }
+        //增加videoinput
+        if ([_session canAddInput:self.audioInput]) {
+            [_session addInput:self.audioInput];
+        }
+        //增加fileOutput
+        if ([_session canAddOutput:self.movieFileOutput]) {
+            [_session addOutput:self.movieFileOutput];
+        }
+    }
+    return _session;
+}
+</code></pre>
+<p>这个地方需要注意下，每次我们更改<code>AVCaptureSession</code>的属性的时候我们都需要：   </p>
+<pre><code class="objc">[session beginConfiguration];
+// Remove an existing capture device.
+// Add a new capture device.
+// Reset the preset.
+[session commitConfiguration];
+</code></pre>
+<h5 id="现在就可以录制视频并写入文件了"><a href="#现在就可以录制视频并写入文件了" class="headerlink" title="现在就可以录制视频并写入文件了"></a>现在就可以录制视频并写入文件了</h5><p>为了实时查看我们录制的内容，我们加一个预览层。   </p>
+<pre><code class="objc">-(AVCaptureVideoPreviewLayer *)previewLayer{
+    if (!_previewLayer) {
+        _previewLayer = [[AVCaptureVideoPreviewLayer alloc] initWithSession:self.session];
+        _previewLayer.frame = [UIScreen mainScreen].bounds;
+        _previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+        _previewLayer.connection.videoOrientation = AVCaptureVideoOrientationPortrait;
+    }
+    return _previewLayer;
+}
+</code></pre>
+<p>在控制器里面调用<code>session</code>的<code>startRuning</code>方法，这个时候只是采集到了视频显示在了预览层上面，并未开始录制。</p>
+<pre><code class="objc">- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.recodingView.delegate = self;
+    [self.view.layer insertSublayer:self.previewLayer atIndex:0];
+    [self.session startRunning];
+
+
+}
+</code></pre>
+<p>点击录制视频,<code>recodingView</code>是我自定义的控件。   </p>
+<pre><code class="objc">-(void)writePath{
+    if ([self.movieFileOutput isRecording] ) {
+        [self.movieFileOutput stopRecording];
+        return;
+    }
+    NSDateFormatter * dateFormatter = [[NSDateFormatter alloc] init ];
+    [dateFormatter setDateFormat:@&quot;yyyyMMddHHmmss&quot;];
+    NSString * fileName = [[dateFormatter stringFromDate:[NSDate date]] stringByAppendingString:@&quot;.mov&quot;];
+    NSString * filePath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:fileName];
+    NSURL *filePathUrl = [NSURL fileURLWithPath:filePath];
+    //写文件到指定的路径，并设置代理
+    [self.movieFileOutput startRecordingToOutputFileURL:filePathUrl recordingDelegate:self];
+}
+</code></pre>
+<p>设置代理,在视频录制的过程中会发生许多情况，比如说突然来电话，摄像头被其他程序占用，系统会发送相应的通知给我们。</p>
+<pre><code class="objc">- (void)captureOutput:(AVCaptureFileOutput *)captureOutput
+didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL
+      fromConnections:(NSArray *)connections
+                error:(NSError *)error{
+    BOOL recordSuccessfully = YES;
+    if ([error code] != noErr) {
+        id value = [[error userInfo] objectForKey:AVErrorRecordingSuccessfullyFinishedKey];
+        if (value) {
+            recordSuccessfully = [value boolValue];
+        }
+    }
+
+//   有`error`的话 有可能也是录制成功了
+    /*
+    AVErrorMaximumDurationReached  时间限制
+    AVErrorMaximumFileSizeReached  文件大小限制
+    AVErrorDiskFull                磁盘已满
+    AVErrorDeviceWasDisconnected   device连接失败
+    AVErrorSessionWasInterrupted   被切断（比如说来电话了）
+*/
+
+}
+</code></pre>
+
+    </div>
+
+    <div class="post-footer">   
+        <div>
+            
+                转载声明：商业转载请联系作者获得授权,非商业转载请注明出处 © <a href="" target="_blank">Fingle</a>
+            
+        </div>
+        <div>
+            
+        </div>  
+    </div>
+</article>
+
+<div class="article-nav prev-next-wrap clearfix">
+    
+        <a href="/2016/05/04/iOS视频开发（二）/" class="pre-post btn btn-default"><i class="fa fa-angle-left fa-fw"></i>上一篇</a>
+    
+    
+        <a href="/2015/07/02/POST和PUT请求的区别/" class="next-post btn btn-default">下一篇<i class="fa fa-angle-right fa-fw"></i></a>
+    
+</div>
+
+
+    <div id="comments">
+        
+   <script type="text/javascript">
+    var gitalk = new Gitalk({
+        clientID: '6d9824221138fe7eda00',
+        clientSecret: '3c4a4e372a70fdd8550bac0a27c1eaf2ad1db667',
+        id: 'ios_video_development_one',
+        repo: 'chiseller.github.io',
+        owner: 'chiseller',
+        admin: 'chiseller'
+    })
+    gitalk.render('comments')
+</script>
+
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+                </main>
+                
+    <aside class="col-md-4 sidebar">
+        
+        
+    <div class="widget">    
+        <h3 class="title">搜索</h3>
+        <div id="search-form">
+            <div id="result-mask" class="hide"></div>
+            <div class="search-area">
+                
+                    <input id="search-key" type="search" autocomplete="off" placeholder="搜点什么呢?">
+                    <button type="button" class="search-form-submit" id="search-local">站内搜索</button>
+                
+                
+            </div>
+            <div id="result-wrap" class="hide">
+                <div id="search-result"></div>
+            </div>
+            <div class="hide">
+                <template id="search-tpl">
+                    <div class="item">
+                        <a href="/{path}" title="{title}">
+                            <div class="title">{title}</div>
+                            <div class="content">{content}</div>
+                        </a>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+        
+        
+    <div class="widget notification">
+        <h3 class="title">关于我</h3>
+        <div>
+            <p>iOS&Web程序员一枚，现居苏州，胆小认生，惧冷怕热，暂时就这么多了！ <br/>
+<hr/>
+</p>
+        </div>
+    </div>
+
+        
+        
+ <div class="widget">
+        <h3 class="title">天气（来源：和风天气）</h3>
+        <div class="content"> 
+        	<div id="he-plugin-standard"></div>
+        </div>
+ </div>
+  
+
+<script>
+WIDGET = {
+  CONFIG: {
+    "layout": 1,
+    "width": "310",
+    "height": "150",
+    "background": 1,
+    "dataColor": "FFFFFF",
+    "language": "zh",
+    "borderRadius": 5,
+    "key": 'bb37cb1f915e4a8a9727d8f2993ab8d2'
+  }
+}
+</script>
+<script src="https://widget.heweather.net/standard/static/js/he-standard-common.js?v=1.1"></script>
+
+
+        
+        
+    <div class="widget">
+      <h3 class="title">社交</h3> 
+        <div class="content social">
+            
+	            <a href="//github.com/chiseller" class = "bg-github" rel="external nofollow" title="Github" target="_blank">
+			    	<i class="github fa fa-github"></i>
+			    </a>
+            
+	            <a href="//twitter.com/fingle0618" class = "bg-twitter" rel="external nofollow" title="Twitter" target="_blank">
+			    	<i class="twitter fa fa-twitter"></i>
+			    </a>
+            
+	            <a href="/" class = "bg-wechat" rel="external nofollow" title="微信" target="_blank">
+			    	<i class="wechat fa fa-wechat"></i>
+			    </a>
+            
+	            <a href="//weibo.com/gitless" class = "bg-weibo" rel="external nofollow" title="微博" target="_blank">
+			    	<i class="weibo fa fa-weibo"></i>
+			    </a>
+            
+	            <a href="/atom.xml" class = "bg-feed" rel="external nofollow" title="RSS" target="_blank">
+			    	<i class="feed fa fa-feed"></i>
+			    </a>
+            
+        </div>
+    </div>
+
+
+        
+        
+    <div class="widget">
+        <h3 class="title">分类</h3>
+        <ul class="category-list"><li class="category-list-item"><a class="category-list-link current" href="/categories/App/"><i class="fa" aria-hidden="true">App</i></a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mac/"><i class="fa" aria-hidden="true">Mac</i></a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP/"><i class="fa" aria-hidden="true">PHP</i></a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iOS/"><i class="fa" aria-hidden="true">iOS</i></a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/"><i class="fa" aria-hidden="true">linux</i></a><span class="category-list-count">2</span></li></ul>
+    </div>
+
+
+        
+        
+    <div class="widget">
+      <h3 class="title">归档</h3>
+        <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/"><i class="fa" aria-hidden="true">九月 2020</i></a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/"><i class="fa" aria-hidden="true">五月 2018</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/"><i class="fa" aria-hidden="true">五月 2016</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/07/"><i class="fa" aria-hidden="true">七月 2015</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/06/"><i class="fa" aria-hidden="true">六月 2015</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/05/"><i class="fa" aria-hidden="true">五月 2015</i></a><span class="archive-list-count">2</span></li></ul>
+    </div>
+
+
+        
+        
+  <div class="widget">
+    <h3 class="title">标签云</h3>
+    <div class="content tag-cloud">
+        <a href="/tags/JavaScript/" style="font-size: 13.33px;">JavaScript</a> <a href="/tags/MAC/" style="font-size: 10px;">MAC</a> <a href="/tags/Mac/" style="font-size: 10px;">Mac</a> <a href="/tags/PHP/" style="font-size: 10px;">PHP</a> <a href="/tags/Support/" style="font-size: 10px;">Support</a> <a href="/tags/Works/" style="font-size: 13.33px;">Works</a> <a href="/tags/bash/" style="font-size: 16.67px;">bash</a> <a href="/tags/git/" style="font-size: 13.33px;">git</a> <a href="/tags/iOS/" style="font-size: 20px;">iOS</a>
+    </div>
+  </div>
+
+
+        
+        
+    <div class="widget">
+        <h3 class="title">友链</h3>
+        <div class="content friends-link">
+        
+            <a href="http://www.chiseller.com" class="fa" target="_blank">个人博客</a>
+        
+        </div>
+    </div>
+
+
+        
+    </aside>
+
+            </div>
+        </div>
+    </section>
+    <footer class="main-footer">
+    <div class="container">
+        <div class="row">
+        </div>
+    </div>
+</footer>
+
+<a id="back-to-top" class="hide">
+	<i class="fa fa-chevron-up"></i>
+</a>
+
+
+
+
+    <div class="copyright">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12"> 
+                <span>Copyright &copy; 2017
+                </span> | 
+                <span>
+                    Powered by <a href="//hexo.io" class="copyright-links" target="_blank" rel="nofollow">Hexo</a>
+                </span> | 
+                <span>
+                    Theme by <a href="//github.com/chiseller/hexo-theme-snippet.git" class="copyright-links" target="_blank" rel="nofollow">SnippetX</a>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+	<!--prettify代码高亮脚本引入-->
+  <script src="/plugins/prettify/js/prettify.js"></script>
+  <script>
+     $(document).ready(function(){
+		$('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
+ 		prettyPrint();
+		})
+  </script>
+
+
+
+	<script src="/js/search.js?rev=@@hash"></script>
+
+
+<script src="/js/app.js?rev=@@hash"></script>
+
+
+
+
+
+</body>
+
+<div><canvas id='world'></canvas></div>
+<script>
+// One of my first <canvas> experiments, woop! :D 
+
+var SCREEN_WIDTH = window.innerWidth;
+var SCREEN_HEIGHT = window.innerHeight;
+
+var RADIUS = 70;
+
+var RADIUS_SCALE = 1;
+var RADIUS_SCALE_MIN = 1;
+var RADIUS_SCALE_MAX = 1.5;
+
+var QUANTITY = 25;
+
+var canvas;
+var context;
+var particles;
+
+var mouseX = SCREEN_WIDTH * 0.5;
+var mouseY = SCREEN_HEIGHT * 0.5;
+var mouseIsDown = false;
+
+function init() {
+
+  canvas = document.getElementById( 'world' );
+  
+  if (canvas && canvas.getContext) {
+        context = canvas.getContext('2d');
+        
+        // Register event listeners
+        window.addEventListener('mousemove', documentMouseMoveHandler, false);
+        window.addEventListener('mousedown', documentMouseDownHandler, false);
+        window.addEventListener('mouseup', documentMouseUpHandler, false);
+        document.addEventListener('touchstart', documentTouchStartHandler, false);
+        document.addEventListener('touchmove', documentTouchMoveHandler, false);
+        window.addEventListener('resize', windowResizeHandler, false);
+        
+        createParticles();
+        
+        windowResizeHandler();
+        
+        setInterval( loop, 1000 / 60 );
+    }
+}
+
+function createParticles() {
+    particles = [];
+    
+    for (var i = 0; i < QUANTITY; i++) {
+        var particle = {
+            size: 1,
+            position: { x: mouseX, y: mouseY },
+            offset: { x: 0, y: 0 },
+            shift: { x: mouseX, y: mouseY },
+            speed: 0.01+Math.random()*0.04,
+            targetSize: 1,
+            fillColor: '#' + (Math.random() * 0x904040 + 0xaaaaaa | 0).toString(16),
+            orbit: RADIUS*.5 + (RADIUS * .5 * Math.random())
+        };
+        
+        particles.push( particle );
+    }
+}
+
+function documentMouseMoveHandler(event) {
+    mouseX = event.clientX - (window.innerWidth - SCREEN_WIDTH) * .5;
+    mouseY = event.clientY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+}
+
+function documentMouseDownHandler(event) {
+    mouseIsDown = true;
+}
+
+function documentMouseUpHandler(event) {
+    mouseIsDown = false;
+}
+
+function documentTouchStartHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function documentTouchMoveHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function windowResizeHandler() {
+    SCREEN_WIDTH = window.innerWidth;
+    SCREEN_HEIGHT = window.innerHeight;
+    
+    canvas.width = SCREEN_WIDTH;
+    canvas.height = SCREEN_HEIGHT;
+}
+
+function loop() {
+    
+    if( mouseIsDown ) {
+        RADIUS_SCALE += ( RADIUS_SCALE_MAX - RADIUS_SCALE ) * (0.02);
+    }
+    else {
+        RADIUS_SCALE -= ( RADIUS_SCALE - RADIUS_SCALE_MIN ) * (0.02);
+    }
+    
+    RADIUS_SCALE = Math.min( RADIUS_SCALE, RADIUS_SCALE_MAX );
+    
+    context.fillStyle = 'rgba(0,0,0,0.05)';
+         context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+    
+    for (i = 0, len = particles.length; i < len; i++) {
+        var particle = particles[i];
+        
+        var lp = { x: particle.position.x, y: particle.position.y };
+        
+        // Rotation
+        particle.offset.x += particle.speed;
+        particle.offset.y += particle.speed;
+        
+        // Follow mouse with some lag
+        particle.shift.x += ( mouseX - particle.shift.x) * (particle.speed);
+        particle.shift.y += ( mouseY - particle.shift.y) * (particle.speed);
+        
+        // Apply position
+        particle.position.x = particle.shift.x + Math.cos(i + particle.offset.x) * (particle.orbit*RADIUS_SCALE);
+        particle.position.y = particle.shift.y + Math.sin(i + particle.offset.y) * (particle.orbit*RADIUS_SCALE);
+        
+        // Limit to screen bounds
+        particle.position.x = Math.max( Math.min( particle.position.x, SCREEN_WIDTH ), 0 );
+        particle.position.y = Math.max( Math.min( particle.position.y, SCREEN_HEIGHT ), 0 );
+        
+        particle.size += ( particle.targetSize - particle.size ) * 0.01;
+        
+        if( Math.round( particle.size ) == Math.round( particle.targetSize ) ) {
+            particle.targetSize = 1 + Math.random() * 2;
+        }
+        
+        context.beginPath();
+        context.fillStyle = particle.fillColor;
+        context.strokeStyle = particle.fillColor;
+        context.lineWidth = particle.size;
+        context.moveTo(lp.x, lp.y);
+        context.lineTo(particle.position.x, particle.position.y);
+        context.stroke();
+        context.arc(particle.position.x, particle.position.y, particle.size/2, 0, Math.PI*2, true);
+        context.fill();
+    }
+}
+window.onload = init;</script>
+</html>

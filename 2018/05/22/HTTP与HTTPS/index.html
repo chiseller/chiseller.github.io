@@ -1,0 +1,812 @@
+
+
+<!DOCTYPE HTML>
+<html>
+<head>
+    <!--Setting-->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <meta name="renderer" content="webkit|ie-comp|ie-stand">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="format-detection" content="telephone=no,email=no,adress=no">
+    <meta name="browsermode" content="application">
+    <meta name="screen-orientation" content="portrait">
+    <link rel="dns-prefetch" href="https://chiseller.github.io">
+   <!-- gittalk -->
+   
+ <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+    <script src="https://cdn.bootcss.com/jquery/2.1.1/jquery.js"></script>
+    
+    <!--SEO-->
+
+<meta name="description" content="你脖子扬起来，看云，云就散了；看雨，雨就收了；看我，我就酥了！"/>
+
+
+
+<meta name="robots" content="all" />
+<meta name="google" content="all" />
+<meta name="googlebot" content="all" />
+<meta name="verify" content="all" />
+    <!--Title-->
+
+
+<title>HTTP与HTTPS握手的那些事 | Fingle</title>
+
+
+    <link rel="alternate" href="/atom.xml" title="Fingle" type="application/atom+xml">
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+<script>
+// One of my first <canvas> experiments, woop! :D 
+
+var SCREEN_WIDTH = window.innerWidth;
+var SCREEN_HEIGHT = window.innerHeight;
+
+var RADIUS = 70;
+
+var RADIUS_SCALE = 1;
+var RADIUS_SCALE_MIN = 1;
+var RADIUS_SCALE_MAX = 1.5;
+
+var QUANTITY = 25;
+
+var canvas;
+var context;
+var particles;
+
+var mouseX = SCREEN_WIDTH * 0.5;
+var mouseY = SCREEN_HEIGHT * 0.5;
+var mouseIsDown = false;
+
+function init() {
+
+  canvas = document.getElementById( 'world' );
+  
+  if (canvas && canvas.getContext) {
+        context = canvas.getContext('2d');
+        
+        // Register event listeners
+        window.addEventListener('mousemove', documentMouseMoveHandler, false);
+        window.addEventListener('mousedown', documentMouseDownHandler, false);
+        window.addEventListener('mouseup', documentMouseUpHandler, false);
+        document.addEventListener('touchstart', documentTouchStartHandler, false);
+        document.addEventListener('touchmove', documentTouchMoveHandler, false);
+        window.addEventListener('resize', windowResizeHandler, false);
+        
+        createParticles();
+        
+        windowResizeHandler();
+        
+        setInterval( loop, 1000 / 60 );
+    }
+}
+
+function createParticles() {
+    particles = [];
+    
+    for (var i = 0; i < QUANTITY; i++) {
+        var particle = {
+            size: 1,
+            position: { x: mouseX, y: mouseY },
+            offset: { x: 0, y: 0 },
+            shift: { x: mouseX, y: mouseY },
+            speed: 0.01+Math.random()*0.04,
+            targetSize: 1,
+            fillColor: '#' + (Math.random() * 0x904040 + 0xaaaaaa | 0).toString(16),
+            orbit: RADIUS*.5 + (RADIUS * .5 * Math.random())
+        };
+        
+        particles.push( particle );
+    }
+}
+
+function documentMouseMoveHandler(event) {
+    mouseX = event.clientX - (window.innerWidth - SCREEN_WIDTH) * .5;
+    mouseY = event.clientY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+}
+
+function documentMouseDownHandler(event) {
+    mouseIsDown = true;
+}
+
+function documentMouseUpHandler(event) {
+    mouseIsDown = false;
+}
+
+function documentTouchStartHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function documentTouchMoveHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function windowResizeHandler() {
+    SCREEN_WIDTH = window.innerWidth;
+    SCREEN_HEIGHT = window.innerHeight;
+    
+    canvas.width = SCREEN_WIDTH;
+    canvas.height = SCREEN_HEIGHT;
+}
+
+function loop() {
+    
+    if( mouseIsDown ) {
+        RADIUS_SCALE += ( RADIUS_SCALE_MAX - RADIUS_SCALE ) * (0.02);
+    }
+    else {
+        RADIUS_SCALE -= ( RADIUS_SCALE - RADIUS_SCALE_MIN ) * (0.02);
+    }
+    
+    RADIUS_SCALE = Math.min( RADIUS_SCALE, RADIUS_SCALE_MAX );
+    
+    context.fillStyle = 'rgba(0,0,0,0.05)';
+         context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+    
+    for (i = 0, len = particles.length; i < len; i++) {
+        var particle = particles[i];
+        
+        var lp = { x: particle.position.x, y: particle.position.y };
+        
+        // Rotation
+        particle.offset.x += particle.speed;
+        particle.offset.y += particle.speed;
+        
+        // Follow mouse with some lag
+        particle.shift.x += ( mouseX - particle.shift.x) * (particle.speed);
+        particle.shift.y += ( mouseY - particle.shift.y) * (particle.speed);
+        
+        // Apply position
+        particle.position.x = particle.shift.x + Math.cos(i + particle.offset.x) * (particle.orbit*RADIUS_SCALE);
+        particle.position.y = particle.shift.y + Math.sin(i + particle.offset.y) * (particle.orbit*RADIUS_SCALE);
+        
+        // Limit to screen bounds
+        particle.position.x = Math.max( Math.min( particle.position.x, SCREEN_WIDTH ), 0 );
+        particle.position.y = Math.max( Math.min( particle.position.y, SCREEN_HEIGHT ), 0 );
+        
+        particle.size += ( particle.targetSize - particle.size ) * 0.01;
+        
+        if( Math.round( particle.size ) == Math.round( particle.targetSize ) ) {
+            particle.targetSize = 1 + Math.random() * 2;
+        }
+        
+        context.beginPath();
+        context.fillStyle = particle.fillColor;
+        context.strokeStyle = particle.fillColor;
+        context.lineWidth = particle.size;
+        context.moveTo(lp.x, lp.y);
+        context.lineTo(particle.position.x, particle.position.y);
+        context.stroke();
+        context.arc(particle.position.x, particle.position.y, particle.size/2, 0, Math.PI*2, true);
+        context.fill();
+    }
+}
+window.onload = init;</script>
+    
+
+
+
+
+   <link rel="stylesheet" href="/plugins/prettify/themes/tomorrow-night-eighties.min.css?rev=9.12.0">
+
+
+<link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.4/css/bootstrap.min.css?rev=3.3.4">
+<link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="/css/style.css?rev=@@hash">
+
+
+
+
+    
+    <div class="hide">
+    	<script src="https://s5.cnzz.com/z_stat.php?id=1276871509&web_id=1276871509" language="JavaScript"></script>
+    </div>
+
+
+
+
+
+
+    
+    
+</head>
+
+
+<!--[if lte IE 8]>
+<style>
+    html{ font-size: 1em }
+</style>
+<![endif]-->
+<!--[if lte IE 9]>
+<div style="ie">你使用的浏览器版本过低，为了你更好的阅读体验，请更新浏览器的版本或者使用其他现代浏览器，比如Chrome、Firefox、Safari等。</div>
+<![endif]-->
+
+<body>
+    <header class="main-header"  >
+    <div class="main-header-box">
+        <a class="header-avatar" href="/" title="">
+            <img src="/img/avatar.jpg" alt="logo头像">
+        </a>
+        <div class="branding">
+        	<!--<h2 class="text-hide">Snippet主题,从未如此简单有趣</h2>-->
+            
+                 <img src="/img/branding.png" alt="Snippet 博客主题">  
+             
+    	</div>
+    </div>
+</header>
+    <nav class="main-navigation">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="navbar-header"><span class="nav-toggle-button collapsed" data-toggle="collapse" data-target="#main-menu" id="mnav">
+                    <span class="sr-only">Toggle navigation</span>
+                    <i class="fa fa-bars"></i>
+                    </span>
+                </div>
+                <div class="collapse navbar-collapse" id="main-menu">
+                    <ul class="menu">
+                        
+                            <li role="presentation"><a href="/"><i class="fa fa-fw "></i>首页</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/iOS/"><i class="fa fa-fw "></i>iOS</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/Mac/"><i class="fa fa-fw "></i>Mac</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/common/"><i class="fa fa-fw "></i>生活</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/about/"><i class="fa fa-fw "></i>其他</a>
+                            </li>
+                        
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+    <section class="content-wrap">
+        <div class="container">
+            <div class="row">
+                <main class="col-md-8 main-content m-post">
+                    <p id="process"></p>
+<article class="post">
+    <div class="post-head">
+        <h1 id="HTTP与HTTPS握手的那些事">
+            
+            HTTP与HTTPS握手的那些事
+            
+        </h1>
+        <div class="post-meta">
+    
+    
+    <span class="categories-meta fa-wrap">
+        <i class="fa fa-folder-open-o"></i>
+        <span>iOS</span>
+    </span>
+    
+    
+    <span class="fa-wrap">
+        <i class="fa fa-tags"></i>
+        <span class="tags-meta">
+            
+            Works
+            
+        </span>
+    </span>
+    
+    
+    <span class="fa-wrap">
+        <i class="fa fa-clock-o"></i>
+        <span class="date-meta">2018/05/22</span>
+    </span>
+</div>
+
+            
+            
+            <p class="fa fa-exclamation-triangle warning">
+                本文于<strong>841</strong>天之前发表，文中内容可能已经过时。
+            </p>
+            
+    </div>
+    
+    <div class="post-body post-content">
+        <p>HTTPS握手的过程以及为什么HTTPS是安全的。在讲述这两个握手时候，有一些东西需要提前说明。<br><a id="more"></a>  </p>
+<h4 id="一、前言"><a href="#一、前言" class="headerlink" title="一、前言"></a>一、前言</h4><h5 id="1-HTTP与TCP-IP区别？"><a href="#1-HTTP与TCP-IP区别？" class="headerlink" title="1. HTTP与TCP/IP区别？"></a>1. HTTP与TCP/IP区别？</h5><p>TPC/IP协议是传输层协议，主要解决数据如何在网络中传输，而HTTP是应用层协议，主要解决如何包装数据。WEB使用HTTP协议作应用层协议，以封装HTTP 文本信息，然后使用TCP/IP做传输层协议将它发到网络上。下面的图表试图显示不同的TCP/IP和其他的协议在最初OSI（Open System Interconnect）模型中的位置：     </p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">分层</th>
+<th style="text-align:center">名称</th>
+<th style="text-align:right">协议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">7</td>
+<td style="text-align:center">应用层</td>
+<td style="text-align:right">HTTP、SMTP、SNMP、FTP、Telnet、SP、SSH、NFS、RTSP、XMPP、Whois、ENRP</td>
+</tr>
+<tr>
+<td style="text-align:left">6</td>
+<td style="text-align:center">表示层</td>
+<td style="text-align:right">XDR、ASN1、SMB、AFP、NCP</td>
+</tr>
+<tr>
+<td style="text-align:left">5</td>
+<td style="text-align:center">会话层</td>
+<td style="text-align:right">ASAP、TLS、SSH、ISO8327/ CCITT X225、RPC、 NetBIOS、ASP、 Winsock、 BSD Sock</td>
+</tr>
+<tr>
+<td style="text-align:left">4</td>
+<td style="text-align:center">传输层</td>
+<td style="text-align:right">TCP、UDP、RTP、SCTP、SPX、ATPIL</td>
+</tr>
+<tr>
+<td style="text-align:left">3</td>
+<td style="text-align:center">网络层</td>
+<td style="text-align:right">IP、ICMP、IGMP、IPX、BGP、OSPF、RIP、IGRP、EIGRP、ARP、RARP、X25</td>
+</tr>
+<tr>
+<td style="text-align:left">2</td>
+<td style="text-align:center">数据链路层</td>
+<td style="text-align:right">以太网、令牌环、HDLC、帧中继、ISDN、ATM、IEEE802.11、FDDI、PPP</td>
+</tr>
+<tr>
+<td style="text-align:left">1</td>
+<td style="text-align:center">物理层</td>
+<td style="text-align:right">线路、无线电、光纤、信鸽</td>
+</tr>
+</tbody>
+</table>
+<h5 id="2-CA证书是什么？"><a href="#2-CA证书是什么？" class="headerlink" title="2. CA证书是什么？"></a>2. CA证书是什么？</h5><p>CA（Certificate Authority）是负责管理和签发证书的第三方权威机构，是所有行业和公众都信任的、认可的。CA证书，就是CA颁发的证书，可用于验证网站是否可信（针对HTTPS）、验证某文件是否可信（是否被篡改）等，也可以用一个证书来证明另一个证书是真实可信，最顶级的证书称为根证书。除了根证书（自己证明自己是可靠），其它证书都要依靠上一级的证书，来证明自己。</p>
+<h3 id="二、HTTP三次握手"><a href="#二、HTTP三次握手" class="headerlink" title="二、HTTP三次握手"></a>二、HTTP三次握手</h3><p>HTTP（HyperText Transfer Protocol)超文本传输协议是互联网上应用最为广泛的一种网络协议。由于信息是明文传输，所以被认为是不安全的。而关于HTTP的三次握手，其实就是使用三次TCP握手确认建立一个HTTP连接。如下图所示，SYN（synchronous）是TCP/IP建立连接时使用的握手信号、Sequence number（序列号）、Acknowledge number（确认号码），三个箭头指向就代表三次握手，完成三次握手，客户端与服务器开始传送数据。<br><img src="HTTP与HTTPS/http.jpg" alt="http握手过程">     </p>
+<p><strong>1. 第一次握手：</strong><br>  客户端发送syn包(syn=j)到服务器，并进入SYN_SEND状态，等待服务器确认；<br><strong>2. 第二次握手：</strong><br>服务器收到syn包，必须确认客户的SYN（ack=j+1），同时自己也发送一个SYN包（syn=k），即SYN+ACK包，此时服务器进入SYN_RECV状态；<br><strong>3. 第三次握手：</strong><br>客户端收到服务器的SYN＋ACK包，向服务器发送确认包ACK(ack=k+1)，此包发送完毕，客户端和服务器进入ESTABLISHED状态，完成三次握手。   </p>
+<h3 id="三、HTTPS握手过程"><a href="#三、HTTPS握手过程" class="headerlink" title="三、HTTPS握手过程"></a>三、HTTPS握手过程</h3><p>HTTPS在HTTP的基础上加入了SSL协议，SSL依靠证书来验证服务器的身份，并为浏览器和服务器之间的通信加密。具体是如何进行加密，解密，验证的，且看下图，下面的称为一次握手。<br><img src="HTTP与HTTPS/https.png" alt="https握手过程">     </p>
+<p><strong>1. 客户端发起HTTPS请求</strong></p>
+<p><strong>2. 服务端的配置</strong></p>
+<p>采用HTTPS协议的服务器必须要有一套数字证书，可以是自己制作或者CA证书。区别就是自己颁发的证书需要客户端验证通过，才可以继续访问，而使用CA证书则不会弹出提示页面。这套证书其实就是一对公钥和私钥。公钥给别人加密使用，私钥给自己解密使用。</p>
+<p><strong>3. 传送证书</strong></p>
+<p>这个证书其实就是公钥，只是包含了很多信息，如证书的颁发机构，过期时间等。</p>
+<p><strong>4. 客户端解析证书</strong></p>
+<p>这部分工作是有客户端的TLS来完成的，首先会验证公钥是否有效，比如颁发机构，过期时间等，如果发现异常，则会弹出一个警告框，提示证书存在问题。如果证书没有问题，那么就生成一个随即值，然后用证书对该随机值进行加密。</p>
+<p><strong>5. 传送加密信息</strong></p>
+<p>这部分传送的是用证书加密后的随机值，目的就是让服务端得到这个随机值，以后客户端和服务端的通信就可以通过这个随机值来进行加密解密了。</p>
+<p><strong>6. 服务段解密信息</strong></p>
+<p>服务端用私钥解密后，得到了客户端传过来的随机值(私钥)，然后把内容通过该值进行对称加密。所谓对称加密就是，将信息和私钥通过某种算法混合在一起，这样除非知道私钥，不然无法获取内容，而正好客户端和服务端都知道这个私钥，所以只要加密算法够彪悍，私钥够复杂，数据就够安全。</p>
+<p><strong>7. 传输加密后的信息</strong></p>
+<p>这部分信息是服务段用私钥加密后的信息，可以在客户端被还原。</p>
+<p><strong>8. 客户端解密信息</strong></p>
+<p>客户端用之前生成的私钥解密服务段传过来的信息，于是获取了解密后的内容。</p>
+<p>###三、HTTPS一般使用的加密与HASH算法：</p>
+<p>非对称加密算法：RSA，DSA/DSS</p>
+<p>对称加密算法：AES，RC4，3DES</p>
+<p>HASH算法：MD5，SHA1，SHA256</p>
+
+    </div>
+
+    <div class="post-footer">   
+        <div>
+            
+                转载声明：商业转载请联系作者获得授权,非商业转载请注明出处 © <a href="" target="_blank">Fingle</a>
+            
+        </div>
+        <div>
+            
+        </div>  
+    </div>
+</article>
+
+<div class="article-nav prev-next-wrap clearfix">
+    
+        <a href="/2020/09/07/技术支持/" class="pre-post btn btn-default"><i class="fa fa-angle-left fa-fw"></i>上一篇</a>
+    
+    
+        <a href="/2018/05/22/我的作品链接/" class="next-post btn btn-default">下一篇<i class="fa fa-angle-right fa-fw"></i></a>
+    
+</div>
+
+
+    <div id="comments">
+        
+   <script type="text/javascript">
+    var gitalk = new Gitalk({
+        clientID: '6d9824221138fe7eda00',
+        clientSecret: '3c4a4e372a70fdd8550bac0a27c1eaf2ad1db667',
+        id: 'the_collection_of_my_works',
+        repo: 'chiseller.github.io',
+        owner: 'chiseller',
+        admin: 'chiseller'
+    })
+    gitalk.render('comments')
+</script>
+
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+                </main>
+                
+    <aside class="col-md-4 sidebar">
+        
+        
+    <div class="widget">    
+        <h3 class="title">搜索</h3>
+        <div id="search-form">
+            <div id="result-mask" class="hide"></div>
+            <div class="search-area">
+                
+                    <input id="search-key" type="search" autocomplete="off" placeholder="搜点什么呢?">
+                    <button type="button" class="search-form-submit" id="search-local">站内搜索</button>
+                
+                
+            </div>
+            <div id="result-wrap" class="hide">
+                <div id="search-result"></div>
+            </div>
+            <div class="hide">
+                <template id="search-tpl">
+                    <div class="item">
+                        <a href="/{path}" title="{title}">
+                            <div class="title">{title}</div>
+                            <div class="content">{content}</div>
+                        </a>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+        
+        
+    <div class="widget notification">
+        <h3 class="title">关于我</h3>
+        <div>
+            <p>iOS&Web程序员一枚，现居苏州，胆小认生，惧冷怕热，暂时就这么多了！ <br/>
+<hr/>
+</p>
+        </div>
+    </div>
+
+        
+        
+ <div class="widget">
+        <h3 class="title">天气（来源：和风天气）</h3>
+        <div class="content"> 
+        	<div id="he-plugin-standard"></div>
+        </div>
+ </div>
+  
+
+<script>
+WIDGET = {
+  CONFIG: {
+    "layout": 1,
+    "width": "310",
+    "height": "150",
+    "background": 1,
+    "dataColor": "FFFFFF",
+    "language": "zh",
+    "borderRadius": 5,
+    "key": 'bb37cb1f915e4a8a9727d8f2993ab8d2'
+  }
+}
+</script>
+<script src="https://widget.heweather.net/standard/static/js/he-standard-common.js?v=1.1"></script>
+
+
+        
+        
+    <div class="widget">
+      <h3 class="title">社交</h3> 
+        <div class="content social">
+            
+	            <a href="//github.com/chiseller" class = "bg-github" rel="external nofollow" title="Github" target="_blank">
+			    	<i class="github fa fa-github"></i>
+			    </a>
+            
+	            <a href="//twitter.com/fingle0618" class = "bg-twitter" rel="external nofollow" title="Twitter" target="_blank">
+			    	<i class="twitter fa fa-twitter"></i>
+			    </a>
+            
+	            <a href="/" class = "bg-wechat" rel="external nofollow" title="微信" target="_blank">
+			    	<i class="wechat fa fa-wechat"></i>
+			    </a>
+            
+	            <a href="//weibo.com/gitless" class = "bg-weibo" rel="external nofollow" title="微博" target="_blank">
+			    	<i class="weibo fa fa-weibo"></i>
+			    </a>
+            
+	            <a href="/atom.xml" class = "bg-feed" rel="external nofollow" title="RSS" target="_blank">
+			    	<i class="feed fa fa-feed"></i>
+			    </a>
+            
+        </div>
+    </div>
+
+
+        
+        
+    <div class="widget">
+        <h3 class="title">分类</h3>
+        <ul class="category-list"><li class="category-list-item"><a class="category-list-link current" href="/categories/App/"><i class="fa" aria-hidden="true">App</i></a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mac/"><i class="fa" aria-hidden="true">Mac</i></a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP/"><i class="fa" aria-hidden="true">PHP</i></a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iOS/"><i class="fa" aria-hidden="true">iOS</i></a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/"><i class="fa" aria-hidden="true">linux</i></a><span class="category-list-count">2</span></li></ul>
+    </div>
+
+
+        
+        
+    <div class="widget">
+      <h3 class="title">归档</h3>
+        <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/"><i class="fa" aria-hidden="true">九月 2020</i></a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/"><i class="fa" aria-hidden="true">五月 2018</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/"><i class="fa" aria-hidden="true">五月 2016</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/07/"><i class="fa" aria-hidden="true">七月 2015</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/06/"><i class="fa" aria-hidden="true">六月 2015</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/05/"><i class="fa" aria-hidden="true">五月 2015</i></a><span class="archive-list-count">2</span></li></ul>
+    </div>
+
+
+        
+        
+  <div class="widget">
+    <h3 class="title">标签云</h3>
+    <div class="content tag-cloud">
+        <a href="/tags/JavaScript/" style="font-size: 13.33px;">JavaScript</a> <a href="/tags/MAC/" style="font-size: 10px;">MAC</a> <a href="/tags/Mac/" style="font-size: 10px;">Mac</a> <a href="/tags/PHP/" style="font-size: 10px;">PHP</a> <a href="/tags/Support/" style="font-size: 10px;">Support</a> <a href="/tags/Works/" style="font-size: 13.33px;">Works</a> <a href="/tags/bash/" style="font-size: 16.67px;">bash</a> <a href="/tags/git/" style="font-size: 13.33px;">git</a> <a href="/tags/iOS/" style="font-size: 20px;">iOS</a>
+    </div>
+  </div>
+
+
+        
+        
+    <div class="widget">
+        <h3 class="title">友链</h3>
+        <div class="content friends-link">
+        
+            <a href="http://www.chiseller.com" class="fa" target="_blank">个人博客</a>
+        
+        </div>
+    </div>
+
+
+        
+    </aside>
+
+            </div>
+        </div>
+    </section>
+    <footer class="main-footer">
+    <div class="container">
+        <div class="row">
+        </div>
+    </div>
+</footer>
+
+<a id="back-to-top" class="hide">
+	<i class="fa fa-chevron-up"></i>
+</a>
+
+
+
+
+    <div class="copyright">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12"> 
+                <span>Copyright &copy; 2017
+                </span> | 
+                <span>
+                    Powered by <a href="//hexo.io" class="copyright-links" target="_blank" rel="nofollow">Hexo</a>
+                </span> | 
+                <span>
+                    Theme by <a href="//github.com/chiseller/hexo-theme-snippet.git" class="copyright-links" target="_blank" rel="nofollow">SnippetX</a>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+	<!--prettify代码高亮脚本引入-->
+  <script src="/plugins/prettify/js/prettify.js"></script>
+  <script>
+     $(document).ready(function(){
+		$('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
+ 		prettyPrint();
+		})
+  </script>
+
+
+
+	<script src="/js/search.js?rev=@@hash"></script>
+
+
+<script src="/js/app.js?rev=@@hash"></script>
+
+
+
+
+
+</body>
+
+<div><canvas id='world'></canvas></div>
+<script>
+// One of my first <canvas> experiments, woop! :D 
+
+var SCREEN_WIDTH = window.innerWidth;
+var SCREEN_HEIGHT = window.innerHeight;
+
+var RADIUS = 70;
+
+var RADIUS_SCALE = 1;
+var RADIUS_SCALE_MIN = 1;
+var RADIUS_SCALE_MAX = 1.5;
+
+var QUANTITY = 25;
+
+var canvas;
+var context;
+var particles;
+
+var mouseX = SCREEN_WIDTH * 0.5;
+var mouseY = SCREEN_HEIGHT * 0.5;
+var mouseIsDown = false;
+
+function init() {
+
+  canvas = document.getElementById( 'world' );
+  
+  if (canvas && canvas.getContext) {
+        context = canvas.getContext('2d');
+        
+        // Register event listeners
+        window.addEventListener('mousemove', documentMouseMoveHandler, false);
+        window.addEventListener('mousedown', documentMouseDownHandler, false);
+        window.addEventListener('mouseup', documentMouseUpHandler, false);
+        document.addEventListener('touchstart', documentTouchStartHandler, false);
+        document.addEventListener('touchmove', documentTouchMoveHandler, false);
+        window.addEventListener('resize', windowResizeHandler, false);
+        
+        createParticles();
+        
+        windowResizeHandler();
+        
+        setInterval( loop, 1000 / 60 );
+    }
+}
+
+function createParticles() {
+    particles = [];
+    
+    for (var i = 0; i < QUANTITY; i++) {
+        var particle = {
+            size: 1,
+            position: { x: mouseX, y: mouseY },
+            offset: { x: 0, y: 0 },
+            shift: { x: mouseX, y: mouseY },
+            speed: 0.01+Math.random()*0.04,
+            targetSize: 1,
+            fillColor: '#' + (Math.random() * 0x904040 + 0xaaaaaa | 0).toString(16),
+            orbit: RADIUS*.5 + (RADIUS * .5 * Math.random())
+        };
+        
+        particles.push( particle );
+    }
+}
+
+function documentMouseMoveHandler(event) {
+    mouseX = event.clientX - (window.innerWidth - SCREEN_WIDTH) * .5;
+    mouseY = event.clientY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+}
+
+function documentMouseDownHandler(event) {
+    mouseIsDown = true;
+}
+
+function documentMouseUpHandler(event) {
+    mouseIsDown = false;
+}
+
+function documentTouchStartHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function documentTouchMoveHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function windowResizeHandler() {
+    SCREEN_WIDTH = window.innerWidth;
+    SCREEN_HEIGHT = window.innerHeight;
+    
+    canvas.width = SCREEN_WIDTH;
+    canvas.height = SCREEN_HEIGHT;
+}
+
+function loop() {
+    
+    if( mouseIsDown ) {
+        RADIUS_SCALE += ( RADIUS_SCALE_MAX - RADIUS_SCALE ) * (0.02);
+    }
+    else {
+        RADIUS_SCALE -= ( RADIUS_SCALE - RADIUS_SCALE_MIN ) * (0.02);
+    }
+    
+    RADIUS_SCALE = Math.min( RADIUS_SCALE, RADIUS_SCALE_MAX );
+    
+    context.fillStyle = 'rgba(0,0,0,0.05)';
+         context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+    
+    for (i = 0, len = particles.length; i < len; i++) {
+        var particle = particles[i];
+        
+        var lp = { x: particle.position.x, y: particle.position.y };
+        
+        // Rotation
+        particle.offset.x += particle.speed;
+        particle.offset.y += particle.speed;
+        
+        // Follow mouse with some lag
+        particle.shift.x += ( mouseX - particle.shift.x) * (particle.speed);
+        particle.shift.y += ( mouseY - particle.shift.y) * (particle.speed);
+        
+        // Apply position
+        particle.position.x = particle.shift.x + Math.cos(i + particle.offset.x) * (particle.orbit*RADIUS_SCALE);
+        particle.position.y = particle.shift.y + Math.sin(i + particle.offset.y) * (particle.orbit*RADIUS_SCALE);
+        
+        // Limit to screen bounds
+        particle.position.x = Math.max( Math.min( particle.position.x, SCREEN_WIDTH ), 0 );
+        particle.position.y = Math.max( Math.min( particle.position.y, SCREEN_HEIGHT ), 0 );
+        
+        particle.size += ( particle.targetSize - particle.size ) * 0.01;
+        
+        if( Math.round( particle.size ) == Math.round( particle.targetSize ) ) {
+            particle.targetSize = 1 + Math.random() * 2;
+        }
+        
+        context.beginPath();
+        context.fillStyle = particle.fillColor;
+        context.strokeStyle = particle.fillColor;
+        context.lineWidth = particle.size;
+        context.moveTo(lp.x, lp.y);
+        context.lineTo(particle.position.x, particle.position.y);
+        context.stroke();
+        context.arc(particle.position.x, particle.position.y, particle.size/2, 0, Math.PI*2, true);
+        context.fill();
+    }
+}
+window.onload = init;</script>
+</html>

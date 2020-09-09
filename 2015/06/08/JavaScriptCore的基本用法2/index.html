@@ -1,0 +1,864 @@
+
+
+<!DOCTYPE HTML>
+<html>
+<head>
+    <!--Setting-->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <meta name="renderer" content="webkit|ie-comp|ie-stand">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="format-detection" content="telephone=no,email=no,adress=no">
+    <meta name="browsermode" content="application">
+    <meta name="screen-orientation" content="portrait">
+    <link rel="dns-prefetch" href="https://chiseller.github.io">
+   <!-- gittalk -->
+   
+ <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+    <script src="https://cdn.bootcss.com/jquery/2.1.1/jquery.js"></script>
+    
+    <!--SEO-->
+
+<meta name="description" content="你脖子扬起来，看云，云就散了；看雨，雨就收了；看我，我就酥了！"/>
+
+
+
+<meta name="robots" content="all" />
+<meta name="google" content="all" />
+<meta name="googlebot" content="all" />
+<meta name="verify" content="all" />
+    <!--Title-->
+
+
+<title>JavaScriptCore的基本用法（二） | Fingle</title>
+
+
+    <link rel="alternate" href="/atom.xml" title="Fingle" type="application/atom+xml">
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+<script>
+// One of my first <canvas> experiments, woop! :D 
+
+var SCREEN_WIDTH = window.innerWidth;
+var SCREEN_HEIGHT = window.innerHeight;
+
+var RADIUS = 70;
+
+var RADIUS_SCALE = 1;
+var RADIUS_SCALE_MIN = 1;
+var RADIUS_SCALE_MAX = 1.5;
+
+var QUANTITY = 25;
+
+var canvas;
+var context;
+var particles;
+
+var mouseX = SCREEN_WIDTH * 0.5;
+var mouseY = SCREEN_HEIGHT * 0.5;
+var mouseIsDown = false;
+
+function init() {
+
+  canvas = document.getElementById( 'world' );
+  
+  if (canvas && canvas.getContext) {
+        context = canvas.getContext('2d');
+        
+        // Register event listeners
+        window.addEventListener('mousemove', documentMouseMoveHandler, false);
+        window.addEventListener('mousedown', documentMouseDownHandler, false);
+        window.addEventListener('mouseup', documentMouseUpHandler, false);
+        document.addEventListener('touchstart', documentTouchStartHandler, false);
+        document.addEventListener('touchmove', documentTouchMoveHandler, false);
+        window.addEventListener('resize', windowResizeHandler, false);
+        
+        createParticles();
+        
+        windowResizeHandler();
+        
+        setInterval( loop, 1000 / 60 );
+    }
+}
+
+function createParticles() {
+    particles = [];
+    
+    for (var i = 0; i < QUANTITY; i++) {
+        var particle = {
+            size: 1,
+            position: { x: mouseX, y: mouseY },
+            offset: { x: 0, y: 0 },
+            shift: { x: mouseX, y: mouseY },
+            speed: 0.01+Math.random()*0.04,
+            targetSize: 1,
+            fillColor: '#' + (Math.random() * 0x904040 + 0xaaaaaa | 0).toString(16),
+            orbit: RADIUS*.5 + (RADIUS * .5 * Math.random())
+        };
+        
+        particles.push( particle );
+    }
+}
+
+function documentMouseMoveHandler(event) {
+    mouseX = event.clientX - (window.innerWidth - SCREEN_WIDTH) * .5;
+    mouseY = event.clientY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+}
+
+function documentMouseDownHandler(event) {
+    mouseIsDown = true;
+}
+
+function documentMouseUpHandler(event) {
+    mouseIsDown = false;
+}
+
+function documentTouchStartHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function documentTouchMoveHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function windowResizeHandler() {
+    SCREEN_WIDTH = window.innerWidth;
+    SCREEN_HEIGHT = window.innerHeight;
+    
+    canvas.width = SCREEN_WIDTH;
+    canvas.height = SCREEN_HEIGHT;
+}
+
+function loop() {
+    
+    if( mouseIsDown ) {
+        RADIUS_SCALE += ( RADIUS_SCALE_MAX - RADIUS_SCALE ) * (0.02);
+    }
+    else {
+        RADIUS_SCALE -= ( RADIUS_SCALE - RADIUS_SCALE_MIN ) * (0.02);
+    }
+    
+    RADIUS_SCALE = Math.min( RADIUS_SCALE, RADIUS_SCALE_MAX );
+    
+    context.fillStyle = 'rgba(0,0,0,0.05)';
+         context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+    
+    for (i = 0, len = particles.length; i < len; i++) {
+        var particle = particles[i];
+        
+        var lp = { x: particle.position.x, y: particle.position.y };
+        
+        // Rotation
+        particle.offset.x += particle.speed;
+        particle.offset.y += particle.speed;
+        
+        // Follow mouse with some lag
+        particle.shift.x += ( mouseX - particle.shift.x) * (particle.speed);
+        particle.shift.y += ( mouseY - particle.shift.y) * (particle.speed);
+        
+        // Apply position
+        particle.position.x = particle.shift.x + Math.cos(i + particle.offset.x) * (particle.orbit*RADIUS_SCALE);
+        particle.position.y = particle.shift.y + Math.sin(i + particle.offset.y) * (particle.orbit*RADIUS_SCALE);
+        
+        // Limit to screen bounds
+        particle.position.x = Math.max( Math.min( particle.position.x, SCREEN_WIDTH ), 0 );
+        particle.position.y = Math.max( Math.min( particle.position.y, SCREEN_HEIGHT ), 0 );
+        
+        particle.size += ( particle.targetSize - particle.size ) * 0.01;
+        
+        if( Math.round( particle.size ) == Math.round( particle.targetSize ) ) {
+            particle.targetSize = 1 + Math.random() * 2;
+        }
+        
+        context.beginPath();
+        context.fillStyle = particle.fillColor;
+        context.strokeStyle = particle.fillColor;
+        context.lineWidth = particle.size;
+        context.moveTo(lp.x, lp.y);
+        context.lineTo(particle.position.x, particle.position.y);
+        context.stroke();
+        context.arc(particle.position.x, particle.position.y, particle.size/2, 0, Math.PI*2, true);
+        context.fill();
+    }
+}
+window.onload = init;</script>
+    
+
+
+
+
+   <link rel="stylesheet" href="/plugins/prettify/themes/tomorrow-night-eighties.min.css?rev=9.12.0">
+
+
+<link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.4/css/bootstrap.min.css?rev=3.3.4">
+<link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="/css/style.css?rev=@@hash">
+
+
+
+
+    
+    <div class="hide">
+    	<script src="https://s5.cnzz.com/z_stat.php?id=1276871509&web_id=1276871509" language="JavaScript"></script>
+    </div>
+
+
+
+
+
+
+    
+    
+</head>
+
+
+<!--[if lte IE 8]>
+<style>
+    html{ font-size: 1em }
+</style>
+<![endif]-->
+<!--[if lte IE 9]>
+<div style="ie">你使用的浏览器版本过低，为了你更好的阅读体验，请更新浏览器的版本或者使用其他现代浏览器，比如Chrome、Firefox、Safari等。</div>
+<![endif]-->
+
+<body>
+    <header class="main-header"  >
+    <div class="main-header-box">
+        <a class="header-avatar" href="/" title="">
+            <img src="/img/avatar.jpg" alt="logo头像">
+        </a>
+        <div class="branding">
+        	<!--<h2 class="text-hide">Snippet主题,从未如此简单有趣</h2>-->
+            
+                 <img src="/img/branding.png" alt="Snippet 博客主题">  
+             
+    	</div>
+    </div>
+</header>
+    <nav class="main-navigation">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="navbar-header"><span class="nav-toggle-button collapsed" data-toggle="collapse" data-target="#main-menu" id="mnav">
+                    <span class="sr-only">Toggle navigation</span>
+                    <i class="fa fa-bars"></i>
+                    </span>
+                </div>
+                <div class="collapse navbar-collapse" id="main-menu">
+                    <ul class="menu">
+                        
+                            <li role="presentation"><a href="/"><i class="fa fa-fw "></i>首页</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/iOS/"><i class="fa fa-fw "></i>iOS</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/Mac/"><i class="fa fa-fw "></i>Mac</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/common/"><i class="fa fa-fw "></i>生活</a>
+                            </li>
+                        
+                            <li role="presentation"><a href="/categories/about/"><i class="fa fa-fw "></i>其他</a>
+                            </li>
+                        
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+    <section class="content-wrap">
+        <div class="container">
+            <div class="row">
+                <main class="col-md-8 main-content m-post">
+                    <p id="process"></p>
+<article class="post">
+    <div class="post-head">
+        <h1 id="JavaScriptCore的基本用法（二）">
+            
+            JavaScriptCore的基本用法（二）
+            
+        </h1>
+        <div class="post-meta">
+    
+    
+    <span class="categories-meta fa-wrap">
+        <i class="fa fa-folder-open-o"></i>
+        <span>iOS</span>
+    </span>
+    
+    
+    <span class="fa-wrap">
+        <i class="fa fa-tags"></i>
+        <span class="tags-meta">
+            
+            JavaScript
+            
+        </span>
+    </span>
+    
+    
+    <span class="fa-wrap">
+        <i class="fa fa-clock-o"></i>
+        <span class="date-meta">2015/06/08</span>
+    </span>
+</div>
+
+            
+            
+            <p class="fa fa-exclamation-triangle warning">
+                本文于<strong>1920</strong>天之前发表，文中内容可能已经过时。
+            </p>
+            
+    </div>
+    
+    <div class="post-body post-content">
+        <p>  这是<code>JavaScriptCore</code>的第二篇<br><a id="more"></a></p>
+<h3 id="代理设置（JS调用OC的第二种方法）"><a href="#代理设置（JS调用OC的第二种方法）" class="headerlink" title="代理设置（JS调用OC的第二种方法）"></a>代理设置（<code>JS</code>调用<code>OC</code>的第二种方法）</h3><p><code>h文件</code></p>
+<pre><code class="objc">
+//首先写一个协议  遵守JSExport协议
+@protocol JSExportTest &lt;JSExport&gt;
+//宏转换下，将JS函数名称指定为Add；
+JSExportAs(add, - (NSInteger)add:(NSInteger)a b:(NSInteger)b);
+@property (nonatomic, assign) NSInteger sum;
+
+@end
+
+
+//建一个对象实现这个协议
+@interface JSTest : NSObject&lt;JSExportTest&gt;
+
+@end
+</code></pre>
+<p><code>m文件</code></p>
+<pre><code class="objc">@implementation JSTest
+@synthesize sum = _sum;
+//实现协议方法
+- (NSInteger)add:(NSInteger)a b:(NSInteger)b{
+return a + b;
+}
+
+
+-(void)setSum:(NSInteger)sum{
+NSLog(@&quot;%ld&quot;,(long)sum);
+_sum = sum;
+}
+
+@end
+</code></pre>
+<p>在viewcontroller里面</p>
+<pre><code class="objc">JSContext *context = [[JSContext alloc] init];
+//设置异常处理
+self.context.exceptionHandler = ^(JSContext *context, JSValue *exception) {
+[JSContext currentContext].exception = exception;
+NSLog(@&quot;exception:%@&quot;,exception);
+};
+//将obj添加到context中
+scontext[@&quot;obj&quot;] = [][JSTest alloc]init];
+//JS里面调用obj方法，并将结果赋值给obj的sum属性
+[context evaluateScript:@&quot;obj.sum = obj.add(2,3)&quot;];
+</code></pre>
+<p>在<code>JS</code>中进行调用这个对象的方法，并将结果赋值<code>sum</code>。唯一要注意的是<code>OC</code>的函数命名和<code>JS</code>函数命名规则问题。协议中定义的是<code>add: b:</code>，但是<code>JS</code>里面方法名字是<code>add(a,b)</code>。可以通过<code>JSExportAs</code>这个宏转换成<code>JS</code>的函数名字。</p>
+<h3 id="异常处理"><a href="#异常处理" class="headerlink" title="异常处理"></a>异常处理</h3><p><code>Objective-C</code>的异常会在运行时被<code>Xcode</code>捕获，而在<code>JSContext</code>中执行的<code>JavaScript</code>如果出现异常，只会被<code>JSContext</code>捕获并存储在<code>exception</code>属性上，而不会向外抛出。时时刻刻检查<code>JSContext</code>对象的<code>exception</code>是否不为<code>nil</code>显然是不合适，更合理的方式是给<code>JSContext</code>对象设置<code>exceptionHandler</code>，它接受的是<code>^(JSContext *context, JSValue *exceptionValue)</code>形式的<code>Block</code>。其默认值就是将传入的<code>exceptionValue</code>赋给传入的<code>context的exception</code>属性：</p>
+<pre><code class="objc">JSContext *context = [[JSContext alloc] init];
+context.exceptionHandler = ^(JSContext *con, JSValue *exception) {
+NSLog(@&quot;%@&quot;, exception);
+con.exception = exception;
+};
+
+[context evaluateScript:@&quot;fengzhen = 66&quot;];
+
+//输出:
+//  ReferenceError: Can&#39;t find variable: fengzhen
+</code></pre>
+<p>无论是把<code>Block</code>传给<code>JSContext</code>对象让其变成<code>avaScript</code>方法，还是把它赋给<code>exceptionHandler</code>属性，在<code>Block</code>内都不要直接使用其外部定义的<code>JSContext</code>对象或者JSValue，应该将其当做参数传入到<code>Block</code>中，或者通过<code>JSContext</code>的类方法<code>+ (JSContext *)currentContext;</code>来获得。否则会造成循环引用使得内存无法被正确释放。</p>
+<h3 id="内存管理"><a href="#内存管理" class="headerlink" title="内存管理"></a>内存管理</h3><p><code>OC</code>使用的是<code>ARC</code>，<code>JS</code>使用的是垃圾回收机制，js的引用全都是强引用，垃圾回收机制会帮他们打破这种强引用，所以JS不存在循环引用的问题。一般情况下，<code>OC</code>和<code>JS</code>对象之间内存管理都无需我们去关心。不过还是有几个注意点需要我们去留意下。</p>
+<h4 id="不要在block里面直接使用context，或者使用外部的JSValue对象。"><a href="#不要在block里面直接使用context，或者使用外部的JSValue对象。" class="headerlink" title="不要在block里面直接使用context，或者使用外部的JSValue对象。"></a>不要在<code>block</code>里面直接使用<code>context</code>，或者使用外部的<code>JSValue</code>对象。</h4><pre><code class="objc">JSContext *context = [[JSContext alloc] init];
+//设置异常处理
+self.context.exceptionHandler = ^(JSContext *context, JSValue *exception) {
+//直接这么使用是错误的
+//context.exception = exception;
+[JSContext currentContext].exception = exception;
+NSLog(@&quot;exception:%@&quot;,exception);
+};
+</code></pre>
+<h4 id="OC对象不要用属性直接保存JSValue对象，因为这样太容易造成循环引用。"><a href="#OC对象不要用属性直接保存JSValue对象，因为这样太容易造成循环引用。" class="headerlink" title="OC对象不要用属性直接保存JSValue对象，因为这样太容易造成循环引用。"></a><code>OC</code>对象不要用属性直接保存<code>JSValue</code>对象，因为这样太容易造成循环引用。</h4><p>下面的例子：</p>
+<pre><code class="objc">#import &lt;Foundation/Foundation.h&gt;
+#import &lt;JavaScriptCore/JavaScriptCore.h&gt;
+//首先写一个协议  遵守JSExport协议
+@protocol JSExportTest &lt;JSExport&gt;
+//宏转换下，将JS函数名称指定为Add；
+JSExportAs(add, - (NSInteger)add:(NSInteger)a b:(NSInteger)b);
+@property (nonatomic, strong) JSValue *value;
+
+@end
+
+
+//建一个对象实现这个协议
+@interface JSTest : NSObject&lt;JSExportTest&gt;
+
+@end
+</code></pre>
+<pre><code class="objc">#import &quot;JSTest.h&quot;
+
+@implementation JSTest
+@synthesize value = _value;
+//实现协议方法
+
+-(void)setValue:(JSValue *)value{
+_value = value;
+}
+@end
+</code></pre>
+<p><code>viewController里面</code></p>
+<pre><code class="objc">JSContext *context = [[JSContext alloc]init];
+context.exceptionHandler = ^(JSContext *j, JSValue *v){
+NSLog(@&quot;%@&quot;,j.exception);
+};
+[context evaluateScript:@&quot;function callback(){return &#39;hello world&#39;};function setObj(obj){this.obj = obj;obj.value = callback}&quot;];
+[context[@&quot;setObj&quot;] callWithArguments:@[self.testObj]];
+</code></pre>
+<p>调用<code>JS</code>方法，进行赋值，JS对象保留了传进来的obj，最后，JS将自己的回调callback赋值给了obj，方便obj下次回调给JS；由于JS那边保存了obj，而且obj这边也保留了JS的回调。这样就形成了循环引用。<br>为了打破这种强引用，apple有一个JSManagedValue 的类，官方的原话：</p>
+<pre><code class="objc">The JSManagedValue&#39;s JavaScript value is reachable from JavaScript
+
+The owner of the managed reference is reachable in Objective-C. Manually adding or removing the managed reference in the JSVirtualMachine determines reachability.
+</code></pre>
+<p>JSManagedValue 帮助我们保存JSValue，里面保存的JS对象必须在JS中存在，同时 JSManagedValue 的owner在OC中也存在.因此我们把代理的m文件修改如下：</p>
+<pre><code class="objc">-(void)setValue:(JSValue *)value{
+//    由于是回掉的关系  obj保存了JS的回掉， js也保存了obj，这样就形成了循环引用
+//    JSManageValue帮助我们保存了JSValue，哪里保存的js对象在js中存在。 JSMangerValue的owner在OC中也存在。
+
+JSManagedValue *mavalue = [JSManagedValue managedValueWithValue:value];
+//建立弱引用关系
+[[[JSContext  currentContext] virtualMachine] addManagedReference:mavalue withOwner:self];
+_value = value;
+}
+</code></pre>
+<h4 id="不要在不同的-JSVirtualMachine-之间进行传递JS对象。"><a href="#不要在不同的-JSVirtualMachine-之间进行传递JS对象。" class="headerlink" title="不要在不同的 JSVirtualMachine 之间进行传递JS对象。"></a>不要在不同的 JSVirtualMachine 之间进行传递JS对象。</h4><p>一个JSVirtualMachine可以运行多个context，由于都是在同一个堆内存和同一个垃圾回收下，所以相互之间传值是没问题的。但是如果在不同的 JSVirtualMachine传值，垃圾回收就不知道他们之间的关系了，可能会引起异常。</p>
+<h4 id="JavaScriptCore线程是安全的。"><a href="#JavaScriptCore线程是安全的。" class="headerlink" title="JavaScriptCore线程是安全的。"></a>JavaScriptCore线程是安全的。</h4><p>每个context运行的时候通过lock关联的JSVirtualMachine。如果要进行并发操作，可以创建多个JSVirtualMachine实例进行操作。</p>
+
+    </div>
+
+    <div class="post-footer">   
+        <div>
+            
+                转载声明：商业转载请联系作者获得授权,非商业转载请注明出处 © <a href="" target="_blank">Fingle</a>
+            
+        </div>
+        <div>
+            
+        </div>  
+    </div>
+</article>
+
+<div class="article-nav prev-next-wrap clearfix">
+    
+        <a href="/2015/07/02/在centos上搭建git服务器/" class="pre-post btn btn-default"><i class="fa fa-angle-left fa-fw"></i>上一篇</a>
+    
+    
+        <a href="/2015/06/01/JavaScriptCore的基本用法1/" class="next-post btn btn-default">下一篇<i class="fa fa-angle-right fa-fw"></i></a>
+    
+</div>
+
+
+    <div id="comments">
+        
+   <script type="text/javascript">
+    var gitalk = new Gitalk({
+        clientID: '6d9824221138fe7eda00',
+        clientSecret: '3c4a4e372a70fdd8550bac0a27c1eaf2ad1db667',
+        id: 'javaScriptCore(2)',
+        repo: 'chiseller.github.io',
+        owner: 'chiseller',
+        admin: 'chiseller'
+    })
+    gitalk.render('comments')
+</script>
+
+
+
+
+
+
+
+    </div>
+
+
+
+
+
+                </main>
+                
+    <aside class="col-md-4 sidebar">
+        
+        
+    <div class="widget">    
+        <h3 class="title">搜索</h3>
+        <div id="search-form">
+            <div id="result-mask" class="hide"></div>
+            <div class="search-area">
+                
+                    <input id="search-key" type="search" autocomplete="off" placeholder="搜点什么呢?">
+                    <button type="button" class="search-form-submit" id="search-local">站内搜索</button>
+                
+                
+            </div>
+            <div id="result-wrap" class="hide">
+                <div id="search-result"></div>
+            </div>
+            <div class="hide">
+                <template id="search-tpl">
+                    <div class="item">
+                        <a href="/{path}" title="{title}">
+                            <div class="title">{title}</div>
+                            <div class="content">{content}</div>
+                        </a>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+        
+        
+    <div class="widget notification">
+        <h3 class="title">关于我</h3>
+        <div>
+            <p>iOS&Web程序员一枚，现居苏州，胆小认生，惧冷怕热，暂时就这么多了！ <br/>
+<hr/>
+</p>
+        </div>
+    </div>
+
+        
+        
+ <div class="widget">
+        <h3 class="title">天气（来源：和风天气）</h3>
+        <div class="content"> 
+        	<div id="he-plugin-standard"></div>
+        </div>
+ </div>
+  
+
+<script>
+WIDGET = {
+  CONFIG: {
+    "layout": 1,
+    "width": "310",
+    "height": "150",
+    "background": 1,
+    "dataColor": "FFFFFF",
+    "language": "zh",
+    "borderRadius": 5,
+    "key": 'bb37cb1f915e4a8a9727d8f2993ab8d2'
+  }
+}
+</script>
+<script src="https://widget.heweather.net/standard/static/js/he-standard-common.js?v=1.1"></script>
+
+
+        
+        
+    <div class="widget">
+      <h3 class="title">社交</h3> 
+        <div class="content social">
+            
+	            <a href="//github.com/chiseller" class = "bg-github" rel="external nofollow" title="Github" target="_blank">
+			    	<i class="github fa fa-github"></i>
+			    </a>
+            
+	            <a href="//twitter.com/fingle0618" class = "bg-twitter" rel="external nofollow" title="Twitter" target="_blank">
+			    	<i class="twitter fa fa-twitter"></i>
+			    </a>
+            
+	            <a href="/" class = "bg-wechat" rel="external nofollow" title="微信" target="_blank">
+			    	<i class="wechat fa fa-wechat"></i>
+			    </a>
+            
+	            <a href="//weibo.com/gitless" class = "bg-weibo" rel="external nofollow" title="微博" target="_blank">
+			    	<i class="weibo fa fa-weibo"></i>
+			    </a>
+            
+	            <a href="/atom.xml" class = "bg-feed" rel="external nofollow" title="RSS" target="_blank">
+			    	<i class="feed fa fa-feed"></i>
+			    </a>
+            
+        </div>
+    </div>
+
+
+        
+        
+    <div class="widget">
+        <h3 class="title">分类</h3>
+        <ul class="category-list"><li class="category-list-item"><a class="category-list-link current" href="/categories/App/"><i class="fa" aria-hidden="true">App</i></a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Mac/"><i class="fa" aria-hidden="true">Mac</i></a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP/"><i class="fa" aria-hidden="true">PHP</i></a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iOS/"><i class="fa" aria-hidden="true">iOS</i></a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/"><i class="fa" aria-hidden="true">linux</i></a><span class="category-list-count">2</span></li></ul>
+    </div>
+
+
+        
+        
+    <div class="widget">
+      <h3 class="title">归档</h3>
+        <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/"><i class="fa" aria-hidden="true">九月 2020</i></a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/05/"><i class="fa" aria-hidden="true">五月 2018</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/"><i class="fa" aria-hidden="true">五月 2016</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/07/"><i class="fa" aria-hidden="true">七月 2015</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/06/"><i class="fa" aria-hidden="true">六月 2015</i></a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/05/"><i class="fa" aria-hidden="true">五月 2015</i></a><span class="archive-list-count">2</span></li></ul>
+    </div>
+
+
+        
+        
+  <div class="widget">
+    <h3 class="title">标签云</h3>
+    <div class="content tag-cloud">
+        <a href="/tags/JavaScript/" style="font-size: 13.33px;">JavaScript</a> <a href="/tags/MAC/" style="font-size: 10px;">MAC</a> <a href="/tags/Mac/" style="font-size: 10px;">Mac</a> <a href="/tags/PHP/" style="font-size: 10px;">PHP</a> <a href="/tags/Support/" style="font-size: 10px;">Support</a> <a href="/tags/Works/" style="font-size: 13.33px;">Works</a> <a href="/tags/bash/" style="font-size: 16.67px;">bash</a> <a href="/tags/git/" style="font-size: 13.33px;">git</a> <a href="/tags/iOS/" style="font-size: 20px;">iOS</a>
+    </div>
+  </div>
+
+
+        
+        
+    <div class="widget">
+        <h3 class="title">友链</h3>
+        <div class="content friends-link">
+        
+            <a href="http://www.chiseller.com" class="fa" target="_blank">个人博客</a>
+        
+        </div>
+    </div>
+
+
+        
+    </aside>
+
+            </div>
+        </div>
+    </section>
+    <footer class="main-footer">
+    <div class="container">
+        <div class="row">
+        </div>
+    </div>
+</footer>
+
+<a id="back-to-top" class="hide">
+	<i class="fa fa-chevron-up"></i>
+</a>
+
+
+
+
+    <div class="copyright">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12"> 
+                <span>Copyright &copy; 2017
+                </span> | 
+                <span>
+                    Powered by <a href="//hexo.io" class="copyright-links" target="_blank" rel="nofollow">Hexo</a>
+                </span> | 
+                <span>
+                    Theme by <a href="//github.com/chiseller/hexo-theme-snippet.git" class="copyright-links" target="_blank" rel="nofollow">SnippetX</a>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+	<!--prettify代码高亮脚本引入-->
+  <script src="/plugins/prettify/js/prettify.js"></script>
+  <script>
+     $(document).ready(function(){
+		$('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
+ 		prettyPrint();
+		})
+  </script>
+
+
+
+	<script src="/js/search.js?rev=@@hash"></script>
+
+
+<script src="/js/app.js?rev=@@hash"></script>
+
+
+
+
+
+</body>
+
+<div><canvas id='world'></canvas></div>
+<script>
+// One of my first <canvas> experiments, woop! :D 
+
+var SCREEN_WIDTH = window.innerWidth;
+var SCREEN_HEIGHT = window.innerHeight;
+
+var RADIUS = 70;
+
+var RADIUS_SCALE = 1;
+var RADIUS_SCALE_MIN = 1;
+var RADIUS_SCALE_MAX = 1.5;
+
+var QUANTITY = 25;
+
+var canvas;
+var context;
+var particles;
+
+var mouseX = SCREEN_WIDTH * 0.5;
+var mouseY = SCREEN_HEIGHT * 0.5;
+var mouseIsDown = false;
+
+function init() {
+
+  canvas = document.getElementById( 'world' );
+  
+  if (canvas && canvas.getContext) {
+        context = canvas.getContext('2d');
+        
+        // Register event listeners
+        window.addEventListener('mousemove', documentMouseMoveHandler, false);
+        window.addEventListener('mousedown', documentMouseDownHandler, false);
+        window.addEventListener('mouseup', documentMouseUpHandler, false);
+        document.addEventListener('touchstart', documentTouchStartHandler, false);
+        document.addEventListener('touchmove', documentTouchMoveHandler, false);
+        window.addEventListener('resize', windowResizeHandler, false);
+        
+        createParticles();
+        
+        windowResizeHandler();
+        
+        setInterval( loop, 1000 / 60 );
+    }
+}
+
+function createParticles() {
+    particles = [];
+    
+    for (var i = 0; i < QUANTITY; i++) {
+        var particle = {
+            size: 1,
+            position: { x: mouseX, y: mouseY },
+            offset: { x: 0, y: 0 },
+            shift: { x: mouseX, y: mouseY },
+            speed: 0.01+Math.random()*0.04,
+            targetSize: 1,
+            fillColor: '#' + (Math.random() * 0x904040 + 0xaaaaaa | 0).toString(16),
+            orbit: RADIUS*.5 + (RADIUS * .5 * Math.random())
+        };
+        
+        particles.push( particle );
+    }
+}
+
+function documentMouseMoveHandler(event) {
+    mouseX = event.clientX - (window.innerWidth - SCREEN_WIDTH) * .5;
+    mouseY = event.clientY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+}
+
+function documentMouseDownHandler(event) {
+    mouseIsDown = true;
+}
+
+function documentMouseUpHandler(event) {
+    mouseIsDown = false;
+}
+
+function documentTouchStartHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function documentTouchMoveHandler(event) {
+    if(event.touches.length == 1) {
+        event.preventDefault();
+
+        mouseX = event.touches[0].pageX - (window.innerWidth - SCREEN_WIDTH) * .5;;
+        mouseY = event.touches[0].pageY - (window.innerHeight - SCREEN_HEIGHT) * .5;
+    }
+}
+
+function windowResizeHandler() {
+    SCREEN_WIDTH = window.innerWidth;
+    SCREEN_HEIGHT = window.innerHeight;
+    
+    canvas.width = SCREEN_WIDTH;
+    canvas.height = SCREEN_HEIGHT;
+}
+
+function loop() {
+    
+    if( mouseIsDown ) {
+        RADIUS_SCALE += ( RADIUS_SCALE_MAX - RADIUS_SCALE ) * (0.02);
+    }
+    else {
+        RADIUS_SCALE -= ( RADIUS_SCALE - RADIUS_SCALE_MIN ) * (0.02);
+    }
+    
+    RADIUS_SCALE = Math.min( RADIUS_SCALE, RADIUS_SCALE_MAX );
+    
+    context.fillStyle = 'rgba(0,0,0,0.05)';
+         context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+    
+    for (i = 0, len = particles.length; i < len; i++) {
+        var particle = particles[i];
+        
+        var lp = { x: particle.position.x, y: particle.position.y };
+        
+        // Rotation
+        particle.offset.x += particle.speed;
+        particle.offset.y += particle.speed;
+        
+        // Follow mouse with some lag
+        particle.shift.x += ( mouseX - particle.shift.x) * (particle.speed);
+        particle.shift.y += ( mouseY - particle.shift.y) * (particle.speed);
+        
+        // Apply position
+        particle.position.x = particle.shift.x + Math.cos(i + particle.offset.x) * (particle.orbit*RADIUS_SCALE);
+        particle.position.y = particle.shift.y + Math.sin(i + particle.offset.y) * (particle.orbit*RADIUS_SCALE);
+        
+        // Limit to screen bounds
+        particle.position.x = Math.max( Math.min( particle.position.x, SCREEN_WIDTH ), 0 );
+        particle.position.y = Math.max( Math.min( particle.position.y, SCREEN_HEIGHT ), 0 );
+        
+        particle.size += ( particle.targetSize - particle.size ) * 0.01;
+        
+        if( Math.round( particle.size ) == Math.round( particle.targetSize ) ) {
+            particle.targetSize = 1 + Math.random() * 2;
+        }
+        
+        context.beginPath();
+        context.fillStyle = particle.fillColor;
+        context.strokeStyle = particle.fillColor;
+        context.lineWidth = particle.size;
+        context.moveTo(lp.x, lp.y);
+        context.lineTo(particle.position.x, particle.position.y);
+        context.stroke();
+        context.arc(particle.position.x, particle.position.y, particle.size/2, 0, Math.PI*2, true);
+        context.fill();
+    }
+}
+window.onload = init;</script>
+</html>
