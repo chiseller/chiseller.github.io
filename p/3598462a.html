@@ -388,9 +388,11 @@ window.onload = init;</script>
 </tr>
 </tbody></table>
 <h5 id="2-CA证书是什么？"><a href="#2-CA证书是什么？" class="headerlink" title="2. CA证书是什么？"></a>2. CA证书是什么？</h5><p>CA（Certificate Authority）是负责管理和签发证书的第三方权威机构，是所有行业和公众都信任的、认可的。CA证书，就是CA颁发的证书，可用于验证网站是否可信（针对HTTPS）、验证某文件是否可信（是否被篡改）等，也可以用一个证书来证明另一个证书是真实可信，最顶级的证书称为根证书。除了根证书（自己证明自己是可靠），其它证书都要依靠上一级的证书，来证明自己。</p>
-<h3 id="二、HTTP三次握手"><a href="#二、HTTP三次握手" class="headerlink" title="二、HTTP三次握手"></a>二、HTTP三次握手</h3><p>HTTP（HyperText Transfer Protocol)超文本传输协议是互联网上应用最为广泛的一种网络协议。由于信息是明文传输，所以被认为是不安全的。而关于HTTP的三次握手，其实就是使用三次TCP握手确认建立一个HTTP连接。如下图所示，SYN（synchronous）是TCP/IP建立连接时使用的握手信号、Sequence number（序列号）、Acknowledge number（确认号码），三个箭头指向就代表三次握手，完成三次握手，客户端与服务器开始传送数据。<br><img src="/HTTP%E4%B8%8EHTTPS/http.jpg" alt="http握手过程">     </p>
+<h3 id="二、HTTP三次握手"><a href="#二、HTTP三次握手" class="headerlink" title="二、HTTP三次握手"></a>二、HTTP三次握手</h3><p>HTTP（HyperText Transfer Protocol)超文本传输协议是互联网上应用最为广泛的一种网络协议。由于信息是明文传输，所以被认为是不安全的。而关于HTTP的三次握手，其实就是使用三次TCP握手确认建立一个HTTP连接。如下图所示，SYN（synchronous）是TCP/IP建立连接时使用的握手信号、Sequence number（序列号）、Acknowledge number（确认号码），三个箭头指向就代表三次握手，完成三次握手，客户端与服务器开始传送数据。</p>
+
 <p><strong>1. 第一次握手：</strong><br>  客户端发送syn包(syn=j)到服务器，并进入SYN_SEND状态，等待服务器确认；<br><strong>2. 第二次握手：</strong><br>服务器收到syn包，必须确认客户的SYN（ack=j+1），同时自己也发送一个SYN包（syn=k），即SYN+ACK包，此时服务器进入SYN_RECV状态；<br><strong>3. 第三次握手：</strong><br>客户端收到服务器的SYN＋ACK包，向服务器发送确认包ACK(ack=k+1)，此包发送完毕，客户端和服务器进入ESTABLISHED状态，完成三次握手。   </p>
-<h3 id="三、HTTPS握手过程"><a href="#三、HTTPS握手过程" class="headerlink" title="三、HTTPS握手过程"></a>三、HTTPS握手过程</h3><p>HTTPS在HTTP的基础上加入了SSL协议，SSL依靠证书来验证服务器的身份，并为浏览器和服务器之间的通信加密。具体是如何进行加密，解密，验证的，且看下图，下面的称为一次握手。<br><img src="/HTTP%E4%B8%8EHTTPS/https.png" alt="https握手过程">     </p>
+<h3 id="三、HTTPS握手过程"><a href="#三、HTTPS握手过程" class="headerlink" title="三、HTTPS握手过程"></a>三、HTTPS握手过程</h3><p>HTTPS在HTTP的基础上加入了SSL协议，SSL依靠证书来验证服务器的身份，并为浏览器和服务器之间的通信加密。具体是如何进行加密，解密，验证的，且看下图，下面的称为一次握手。  </p>
+<img src="/p/3598462a/https.png" class="" title="https握手过程 https握手过程">
 <p><strong>1. 客户端发起HTTPS请求</strong></p>
 <p><strong>2. 服务端的配置</strong></p>
 <p>采用HTTPS协议的服务器必须要有一套数字证书，可以是自己制作或者CA证书。区别就是自己颁发的证书需要客户端验证通过，才可以继续访问，而使用CA证书则不会弹出提示页面。这套证书其实就是一对公钥和私钥。公钥给别人加密使用，私钥给自己解密使用。</p>
